@@ -10,9 +10,14 @@ import pandas as pd
 from data import Data
 from model import ModelWrapper
 from explainer import CFCOG
+from config import Config
+from dataset import Dataset
+from explainable_model import ExplainableModel
+from feature_manager import FeatureManager
 
+import argparse
 
-if __name__ == "__main__":
+def load_dataset():
     # Read the configuration file
     config_dict = {}
     file_path = '/home/rita/TRUST_AI/CF_Cog_biased/CFCOG/conf.txt'
@@ -54,6 +59,10 @@ if __name__ == "__main__":
 
     categorical_features_list = x_train.columns.difference(continuous_features_list)
 
+    return x_train, x_val, y_train, y_val, continuous_features_list, categorical_features_list, config_dict
+
+def buil_pipeline(continuous_features_list, categorical_features_list):
+
     numeric_transformer = Pipeline(steps=[('scaler', StandardScaler())])
 
     categorical_transformer = Pipeline(steps=[('onehot', OneHotEncoder(handle_unknown='ignore'))])
@@ -65,15 +74,67 @@ if __name__ == "__main__":
     clf = Pipeline(steps=[('preprocessor', transformations),
                       ('classifier', LogisticRegression())])
 
+
+def train_model(clf, x_train, x_val, y_train, y_val):
+
     logistic_model = clf.fit(x_train, y_train.values.ravel())
     y_pred = logistic_model.predict(x_val)
     val_accuracy = accuracy_score(y_pred, y_val)*100
     print(val_accuracy)
 
+    return logistic_model
+
+def test_case():
+    """
+    Train val model
+    """
+    x_train, x_val, y_train, y_val, continuous_features_list, categorical_features_list, config_dict = load_dataset()
+
+    clf = buil_pipeline(continuous_features_list, categorical_features_list)
+
+    logistic_model = train_model(clf, x_train, x_val, y_train, y_val)
+
+
+def read_arguments():
+    parser = argparse.ArgumentParser(description='CFCOG')
+    parser.add_argument('--config', type=str, default='config/conf.yaml', help='Path to the configuration file')
+    parser.add_argument('--output', type=str, default='Loan_Status', help='Output to explain')
+    parser.add_argument('--instance', type=str, default='0', help='Instance to explain')
+    parser.add_argument('--constraints', type=str, default='constraints.txt', help='Path to the constraints file')
+    parser.add_argument('--output_dir', type=str, default='results', help='Path to the output directory')
+    parser.add_argument('--output_file', type=str, default='explanation.txt', help='Path to the output file')
+    parser.add_argument('--verbose', type=bool, default=False, help='Verbose mode')
+    parser.add_argument('--debug', type=bool, default=False, help='Debug mode')
+    args = parser.parse_args()
+
+    return args
+
+def main():
+    # Load config file
+
+    args = read_arguments()
+
+    config = Config(args.config)
+
+    # Load dataset
     # Create Data, ModelWrapper, and CounterfactualExplainer objects
+    dataset = Dataset(args.dataset)
+
+    # Load/train model
+
+    model = ExplainableModel(args.config)
+
+    # Create feature manager
     data = Data(dataframe=train, continuous_features=continuous_features_list, categorical_features=categorical_features_list, outcome_name="Loan_Status", constraints=config_dict)
+
+    # Create explainer
     model_wrapper = ModelWrapper(model=logistic_model)  # Pass the model object
     explainer = CFCOG(data, model_wrapper, config_dict)
 
+    # Explain instance
     # Call the explain method with the instance and desired output
     explanation = explainer.explain(instance, desired_output)
+
+
+if __name__ == "__main__":
+    main()

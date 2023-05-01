@@ -3,8 +3,76 @@ import numpy as np
 import logging
 from sklearn.preprocessing import OneHotEncoder
 from typing import List, Union
+from dataset import Dataset
 
-class Data():
+class FeatureManager(object):
+    """
+    Manages features and their properties. Gets dataset and configuration. 
+    Knows features permitted ranges. Performs normalization and denormalization.
+    Calculates meadian abolute deviation of features.
+    One-hot encodes categorical features.
+    """
+    def __init__(self, config, dataset: Dataset):
+        self.config = config
+        self.continuous_features_list = self.dataset.continuous_features_list
+        self.categorical_features_list = self.dataset.categorical_features_list
+        self.constraints = self.config.get_config_value('constraints')
+        self.outcome_name = self.dataset.outcome_name
+        self.normalized_train_data = None
+        self.encoded_cat_data = None
+        self.mean_out1 = None
+        self.cov1 = None
+        self.mean_out0 = None
+        self.cov0 = None
+        self.mad = None
+        self._init_cov_centroids()
+        self._init_mad()
+
+
+    def calc_minmax_for_continuous_features(self, dataset: Dataset):
+        """
+        Calculates min and max for continuous features
+        """
+        minmax = {}
+        for feature in self.continuous_features_list:
+            minmax[feature] = {}
+            minmax[feature]['min'] = self.dataset[feature].min()
+            minmax[feature]['max'] = self.dataset[feature].max()
+        return minmax
+
+    def calc_median_absolute_deviation(self):
+        """
+        Calculates median absolute deviation for continuous features
+        """
+        mad = {}
+        for feature in self.continuous_features_list:
+            mad[feature] = self.normalized_train_data[feature].mad()
+        return mad
+
+    def get_valid_mads(self, normalized=False, display_warnings=False, return_mads=True):
+        """Computes Median Absolute Deviation of features. If they are <=0, returns a practical value instead"""
+        mads = self.get_mads(normalized=normalized)
+        for feature in mads:
+            if mads[feature] <= 0: #TODO what if permitted range is different from observed range?
+                mads[feature] = 1.0
+                if display_warnings:
+                    logging.warning(" MAD for feature %s is 0, so replacing it with 1.0 to avoid error.", feature)
+
+
+    def get_mads(self, normalized, dataset: Dataset):
+        """Computes Median Absolute Deviation of features."""
+        mads = {}
+        if normalized is False:
+            for feature in self.continuous_feature_names:
+                mads[feature] = np.median(
+                    abs(self.dataset[feature].values - np.median(self.dataset[feature].values)))
+        else:
+            normalized_train_df = self.normalize_data(self.dataset)
+            for feature in self.continuous_feature_names:
+                mads[feature] = np.median(
+                    abs(normalized_train_df[feature].values - np.median(normalized_train_df[feature].values)))
+        return mads
+
     def __init__(self, dataframe, continuous_features: List[str], categorical_features: List[str], outcome_name: str, constraints: dict, normalized=False, encoded=False):
         self.training_data = dataframe
         self.continuous_features_list = continuous_features

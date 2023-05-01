@@ -1,0 +1,12 @@
+spartsity:  0.5
+initialization: random
+
+dataset:
+  type: csv
+  path: homeloan_data.csv
+
+model:
+  type: sklearn
+  state: pretrained
+  name: LogisticRegression
+  path: models/logistic_regression.pkl

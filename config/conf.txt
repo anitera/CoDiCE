@@ -1,2 +1,0 @@
-spartsity = 0.5
-initialization = random

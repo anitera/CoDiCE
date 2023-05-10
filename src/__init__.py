@@ -123,7 +123,7 @@ def main():
     train, continuous_features_list, categorical_features_list, config_dict = load_dataset()
     x_train, x_val, y_train, y_val = split_dataset(train, "Loan_Status")
     # Create Data, ModelWrapper, and CounterfactualExplainer objects
-    dataset = Dataset(args.dataset)
+    dataset = Dataset("/home/rita/TRUST_AI/datasets/homeloan_train.xls", outcome="Loan_Status", args.dataset)
 
     # Load/train model
     clf = buil_pipeline(continuous_features_list, categorical_features_list)
@@ -131,7 +131,7 @@ def main():
     #model = ExplainableModel(logistic_model, args.config)
 
     # Create feature manager
-    data = Data(dataframe=train, continuous_features=continuous_features_list, categorical_features=categorical_features_list, outcome_name="Loan_Status", constraints=config_dict)
+    data = FeatureManager(dataframe=train, continuous_features=continuous_features_list, categorical_features=categorical_features_list, outcome_name="Loan_Status", constraints=config_dict)
 
     # Create explainer
     model_wrapper = ModelWrapper(model=logistic_model)  # Pass the model object

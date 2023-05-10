@@ -5,10 +5,10 @@ class Dataset(object):
     """
     Dataset class loads raw data and store continious and categorical features
     """
-    def __init__(self, path, outcome_column_name, dataset_config):
-        self.path = path
+    def __init__(self, config, outcome_column_name):
+        self.config = config.dataset
+        self.path = self.config.path
         self.outcome_column_name = outcome_column_name
-        self.config = dataset_config
         self.data = self.load_dataset()
         self.continuous_features_list, self.categorical_features_list = self.load_features_type(self.config)
 
@@ -19,7 +19,10 @@ class Dataset(object):
         """
         Load xls file
         """
-        data = pd.read_csv(self.path)
+        if (self.config.type == "csv"):
+            data = pd.read_csv(self.path)
+        else:
+            raise ValueError("Dataset type not supported")
         return data
 
     def load_features_type(self, config):

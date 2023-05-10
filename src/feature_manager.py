@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import logging
-from sklearn.preprocessing import OneHotEncoder
+import sklearn
 from typing import List, Union
 from dataset import Dataset
 
@@ -13,11 +13,12 @@ class FeatureManager(object):
     One-hot encodes categorical features.
     """
     def __init__(self, config, dataset: Dataset):
-        self.config = config
+        self.config = config.feature_manager
         self.continuous_features_list = self.dataset.continuous_features_list
         self.categorical_features_list = self.dataset.categorical_features_list
         self.constraints = self.config.get_config_value('constraints')
         self.outcome_name = self.dataset.outcome_name
+        self.init_transformation(dataset)
         self.normalized_train_data = None
         self.encoded_cat_data = None
         self.mean_out1 = None
@@ -28,6 +29,40 @@ class FeatureManager(object):
         self._init_cov_centroids()
         self._init_mad()
 
+
+    def _get_normalization(self):
+        if self.config.get_config_value('normalization') is None:
+            return None
+        if self.config.get_config_value('normalization') == 'minmax':
+            return sklearn.preprocessing.MinMaxScaler()
+        if self.config.get_config_value('normalization') == 'standard':
+            return sklearn.preprocessing.StandardScaler()
+        else:
+            raise ValueError("Normalization type not supported")
+    
+    def _normalization(self, dataset):
+        normalization_type = self._get_normalization()
+        if normalization_type is not None:
+            self.normalization = normalization_type.fit(dataset[self.continuous_features_list])
+            self.transformation.append(self.normalization)
+
+    def _get_cat_engoding(self):
+        if self.config.get_config_value('cat_encoding') is None:
+            return None
+        if self.config.get_config_value('cat_encoding') == 'onehot':
+            return sklearn.preprocessing.OneHotEncoder()
+        else:
+            raise ValueError("Categorical encoding type not supported")
+
+    def _ohe(self, dataset):
+        ohe_type = self._get_cat_engoding()
+        if ohe_type is not None:
+            self.ohe = ohe_type.fit(dataset[self.categorical_features_list])
+
+    def init_transformation(self, dataset):
+        self.transformation = []
+        self._normalization(dataset)
+        self._ohe(dataset)
 
     def calc_minmax_for_continuous_features(self, dataset: Dataset):
         """
@@ -72,18 +107,6 @@ class FeatureManager(object):
                 mads[feature] = np.median(
                     abs(normalized_train_df[feature].values - np.median(normalized_train_df[feature].values)))
         return mads
-
-    def __init__(self, dataframe, continuous_features: List[str], categorical_features: List[str], outcome_name: str, constraints: dict, normalized=False, encoded=False):
-        self.training_data = dataframe
-        self.continuous_features_list = continuous_features
-        self.categorical_features_list = categorical_features
-        self.outcome_name = outcome_name
-        self.constraints = constraints
-        if not normalized:
-            self.normalize_data_cont()
-        if not encoded:
-            self.cat_encodings()
-        # ToDO: normalization, categorical feature encoding
 
     def normalize_data_cont(self):
         self.normalized_train_data = (self.training_data[self.continuous_features_list]-self.training_data[self.continuous_features_list].min())/(self.training_data[self.continuous_features_list].max()-self.training_data[self.continuous_features_list].min())
@@ -147,21 +170,33 @@ class FeatureManager(object):
         if return_mads:
             return mads
 
-    def create_ohe_params(self):
-        if len(self.categorical_feature_names) > 0:
-            # simulating sklearn's one-hot-encoding
-            # continuous features on the left
-            self.ohe_encoded_feature_names = [
-                feature for feature in self.continuous_feature_names]
-            for feature_name in self.categorical_feature_names:
-                for category in sorted(self.categorical_levels[feature_name]):
-                    self.ohe_encoded_feature_names.append(
-                        feature_name+'_'+category)
-        else:
-            # one-hot-encoded data is same as original data if there is no categorical features.
-            self.ohe_encoded_feature_names = [feat for feat in self.feature_names]
+    def transform(self, x):
+        """
+        #TODO
+        """
+        for t in self.transform:
+            x = t.transform(x[self.continuous_features_list])
 
-        # base dataframe for doing one-hot-encoding
-        # ohe_encoded_feature_names and ohe_base_df are created (and stored as data class's parameters)
-        # when get_data_params_for_gradient_dice() is called from gradient-based DiCE explainers
-        self.ohe_base_df = self.prepare_df_for_ohe_encoding()
+        if self.ohe is not None:
+            ohe_features = self.ohe.transform(x[self.categorical_features_list])
+            self.ohe_dims = ohe_features.shape[1]
+
+        x = x[self.continuous_features_list]
+        x = np.concatenate((x, ohe_features), axis=1)
+
+        return x
+
+    def inverse_transform(self, x):
+        """
+        #TODO
+        """
+        for t in self.transform[::-1]:
+            x = t.inverse_transform(x[self.continuous_features_list])
+
+        if self.ohe is not None:
+            ohe_features = self.ohe.inverse_transform(x[-self.ohe_dims:])
+
+        x = x[:-1]
+        x = np.concatenate((x, ohe_features), axis=1)
+        return x
+        

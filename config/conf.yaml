@@ -5,6 +5,14 @@ dataset:
   type: csv
   path: homeloan_data.csv
 
+feature_manager:
+  categorical_features:
+    encoding: onehot # freqhot
+  continuous_features:
+    normalization: standard #minmax
+  constraints:
+    feature_x: []
+
 model:
   type: sklearn
   state: pretrained

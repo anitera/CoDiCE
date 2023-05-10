@@ -37,9 +37,10 @@ def load_dataset():
 
     print(config_dict)
 
-
     train = pd.read_csv("/home/rita/TRUST_AI/datasets/homeloan_train.xls")
     continuous_features_list = ['ApplicantIncome','CoapplicantIncome','LoanAmount', 'Loan_Amount_Term']
+    categorical_features_list = train.columns.difference(continuous_features_list)
+    categorical_features_list = categorical_features_list.drop("Loan_Status")
 
     train["Gender"].fillna(train["Gender"].mode()[0],inplace=True)
     train["Married"].fillna(train["Married"].mode()[0],inplace=True)
@@ -52,14 +53,15 @@ def load_dataset():
     train.loc[train["Loan_Status"]=="N", "Loan_Status"] = 0
     train["Loan_Status"] = train["Loan_Status"].astype('int')
 
-    X=train.drop("Loan_Status",1)
-    y=train[["Loan_Status"]]
+    return train, continuous_features_list, categorical_features_list, config_dict
+
+def split_dataset(train, outcome_column_name):
+    X=train.drop(outcome_column_name,1)
+    y=train[[outcome_column_name]]
 
     x_train,x_val,y_train,y_val=train_test_split(X,y,test_size=0.2,random_state=1)
 
-    categorical_features_list = x_train.columns.difference(continuous_features_list)
-
-    return x_train, x_val, y_train, y_val, continuous_features_list, categorical_features_list, config_dict
+    return x_train, x_val, y_train, y_val
 
 def buil_pipeline(continuous_features_list, categorical_features_list):
 
@@ -73,6 +75,7 @@ def buil_pipeline(continuous_features_list, categorical_features_list):
 
     clf = Pipeline(steps=[('preprocessor', transformations),
                       ('classifier', LogisticRegression())])
+    return clf
 
 
 def train_model(clf, x_train, x_val, y_train, y_val):
@@ -117,12 +120,15 @@ def main():
     config = Config(args.config)
 
     # Load dataset
+    train, continuous_features_list, categorical_features_list, config_dict = load_dataset()
+    x_train, x_val, y_train, y_val = split_dataset(train, "Loan_Status")
     # Create Data, ModelWrapper, and CounterfactualExplainer objects
     dataset = Dataset(args.dataset)
 
     # Load/train model
-
-    model = ExplainableModel(args.config)
+    clf = buil_pipeline(continuous_features_list, categorical_features_list)
+    logistic_model = train_model(clf, x_train, x_val, y_train, y_val)
+    #model = ExplainableModel(logistic_model, args.config)
 
     # Create feature manager
     data = Data(dataframe=train, continuous_features=continuous_features_list, categorical_features=categorical_features_list, outcome_name="Loan_Status", constraints=config_dict)
@@ -132,6 +138,9 @@ def main():
     explainer = CFCOG(data, model_wrapper, config_dict)
 
     # Explain instance
+    instance = train.sample(1)
+    desired_output = 1 - instance["Loan_Status"].values[0]  # Flip the outcome
+    instance = instance.drop("Loan_Status", axis=1)
     # Call the explain method with the instance and desired output
     explanation = explainer.explain(instance, desired_output)
 

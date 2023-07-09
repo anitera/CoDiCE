@@ -1,26 +1,26 @@
 import unittest
 from collections import defaultdict
 import json
-from src.instance import Instance
+from src.ceinstance import CEInstance
 from src.cefeature import CatCEFeature, NumCEFeature, CEFeatureType
 
 # Your Instance class here
 
 class TestInstance(unittest.TestCase):
     def setUp(self):
-        self.instance = Instance('{}')
+        self.instance = CEInstance('{}')
 
     def test_empty_instance(self):
         self.assertEqual(self.instance.features, {})
 
     def test_schema_from_lists(self):
-        Instance.schema_from_lists(['color'], ['height'])
-        self.assertEqual(Instance.instance_schema['color'], CatCEFeature)
-        self.assertEqual(Instance.instance_schema['height'], NumCEFeature)
+        CEInstance.schema_from_lists(['color'], ['height'])
+        self.assertEqual(CEInstance.instance_schema['color'], CatCEFeature)
+        self.assertEqual(CEInstance.instance_schema['height'], NumCEFeature)
 
     def test_non_empty_instance(self):
-        Instance.schema_from_lists(['color'], ['height'])
-        instance = Instance('{"color": "blue", "height": 5}')
+        CEInstance.schema_from_lists(['color'], ['height'])
+        instance = CEInstance('{"color": "blue", "height": 5}')
         # Test 'color' feature
         self.assertIsInstance(instance.features['color'], CatCEFeature)
         self.assertEqual(instance.features['color'].name, 'color')
@@ -35,8 +35,8 @@ class TestInstance(unittest.TestCase):
         self.assertFalse(instance.features['height'].sampled)
 
     def test_iter(self):
-        Instance.schema_from_lists(['color'], ['height'])
-        instance = Instance('{"color": "blue", "height": 5}')
+        CEInstance.schema_from_lists(['color'], ['height'])
+        instance = CEInstance('{"color": "blue", "height": 5}')
         self.assertEqual([f.value for f in instance], ["blue", 5])
 
 if __name__ == "__main__":

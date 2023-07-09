@@ -1,6 +1,6 @@
 import json
 from collections import defaultdict
-from .feature import CatFeature, NumFeature
+from .cefeature import CatCEFeature, NumCEFeature
 
 
 class Instance():
@@ -20,10 +20,10 @@ class Instance():
     @staticmethod
     def schema_from_lists(cat_list, cont_list):
         for cat in cat_list:
-            Instance.instance_schema[cat] = CatFeature
+            Instance.instance_schema[cat] = CatCEFeature
 
         for cont in cont_list:
-            Instance.instance_schema[cont] = NumFeature
+            Instance.instance_schema[cont] = NumCEFeature
 
     @staticmethod
     def create_empty_instance():

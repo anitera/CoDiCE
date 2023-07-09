@@ -1,16 +1,16 @@
-from src.feature_sampler import IFeatureSampler
-from .feature import Feature
+from src.cefeature.feature_sampler import ICEFeatureSampler
+from . import CEFeature
 from typing import List
 
-class IFeatureSampler(object):
+class ICEFeatureSampler(object):
     def __init__(self):
         pass
 
     def sample(self, instance):
         raise NotImplementedError
 
-class MonotonicSampler(IFeatureSampler):
-    def __init__(self, feature: Feature, sign: int):
+class MonotonicSampler(ICEFeatureSampler):
+    def __init__(self, feature: CEFeature, sign: int):
         super().__init__()
         self.feature = feature
         self.sign = sign
@@ -21,7 +21,7 @@ class MonotonicSampler(IFeatureSampler):
     def sample(self, instance):
         pass
 
-class DependentSampler(IFeatureSampler):
+class DependentSampler(ICEFeatureSampler):
     def __init__(self, main_feature: str):
         super().__init__()
         self.main_feature = main_feature
@@ -32,21 +32,21 @@ class DependentSampler(IFeatureSampler):
     def validate(self, value):
         pass
 
-class IDependencyType(object):
+class ICEDependencyType(object):
     def __init__(self):
         pass
 
-    def sample(self, feature_sampler: IFeatureSampler, mf_value, current_instance):
+    def sample(self, feature_sampler: ICEFeatureSampler, mf_value, current_instance):
         pass
 
-class CausalDependency(IDependencyType):
+class CausalDependency(ICEDependencyType):
     def __init__(self) -> None:
         pass
 
-    def sample(self, feature_sampler: IFeatureSampler, mf_value, current_instance):
+    def sample(self, feature_sampler: ICEFeatureSampler, mf_value, current_instance):
         return feature_sampler.sample(current_instance)
 
-class MonotonicDependency(IDependencyType):
+class MonotonicDependency(ICEDependencyType):
     def __init__(self) -> None:
         pass
 
@@ -58,24 +58,24 @@ class MonotonicDependency(IDependencyType):
         else:
             return 0
 
-    def sample(self, feature_sampler: IFeatureSampler, mf_value, current_instance):
+    def sample(self, feature_sampler: ICEFeatureSampler, mf_value, current_instance):
         sign = self._define_sign(mf_value, current_instance.root[self.main_feature])
         feature_sampler.set_sign(sign)
         val = feature_sampler.sample(current_instance)
         return val
 
-class RuleDependency(IDependencyType):
+class RuleDependency(ICEDependencyType):
     def __init__(self, rule_func: function) -> None:
         self._rule = rule_func
 
-    def sample(self, feature_sampler: IFeatureSampler, mf_value, current_instance):
+    def sample(self, feature_sampler: ICEFeatureSampler, mf_value, current_instance):
         val = self._rule(mf_value, current_instance)
         feature_sampler.validate(val)
         return val
 
 
 
-class DependencySampler(IFeatureSampler):
+class DependencySampler(ICEFeatureSampler):
     def __init__(self, main_feature: str, dep_features: List[str], rel_type):
         super().__init__()
         self.main_feature =  main_feature

@@ -1,22 +1,22 @@
 from enum import Enum
 from typing import Any
 
-class FeatureType(Enum):
+class CEFeatureType(Enum):
     NUMERIC = 1
     CATEGORICAL = 2
     BINARY = 3
 
-class Feature(object):
-    def __init__(self, name: str, value: Any, ftype: FeatureType) -> None:
+class CEFeature(object):
+    def __init__(self, name: str, value: Any, ftype: CEFeatureType) -> None:
         self.name = name
         self.ftype = ftype
         self.value = value
         self.sampled = False
 
-class CatFeature(Feature):
+class CatCEFeature(CEFeature):
     def __init__(self, name: str, value: Any) -> None:
-        super().__init__(name, value,  FeatureType.CATEGORICAL)
+        super().__init__(name, value,  CEFeatureType.CATEGORICAL)
 
-class NumFeature(Feature):
+class NumCEFeature(CEFeature):
     def __init__(self, name: str, value: Any) -> None:
-        super().__init__(name, value, FeatureType.NUMERIC)
+        super().__init__(name, value, CEFeatureType.NUMERIC)

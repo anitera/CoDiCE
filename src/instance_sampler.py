@@ -1,10 +1,10 @@
 from .instance import Instance
-from .feature_sampler import IFeatureSampler
+from .cefeature.feature_sampler import ICEFeatureSampler
 from collections import OrderedDict
 
 class InstanceSampler(object):
     def __init__(self, config, dataset_metadata):
-        self.feature_samplers = OrderedDict(IFeatureSampler) #TODO make ordered
+        self.feature_samplers = OrderedDict(ICEFeatureSampler) #TODO make ordered
 
 
     def sample(self, old_instance: Instance):

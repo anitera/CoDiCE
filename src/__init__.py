@@ -1,7 +1,7 @@
-from explainer import CFCOG
-from config import Config
-from dataset import Dataset
-from feature_manager import FeatureManager
+#from explainer import CFCOG
+#from config import Config
+#from dataset import Dataset
+#from feature_manager import FeatureManager
 
 import argparse
 
@@ -23,6 +23,7 @@ def read_arguments():
 
     return args
 
+'''
 def main():
     # Load config file
 
@@ -55,5 +56,5 @@ def main():
     explanation = explainer.explain(instance, desired_output)
 
 
-if __name__ == "__main__":
-    main()
+#if __name__ == "__main__":
+    #main()'''

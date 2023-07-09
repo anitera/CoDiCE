@@ -13,7 +13,8 @@ class Instance():
         self.features = {}
         json_dict = json.loads(json_string)
         for k, v in json_dict.items():
-            self.features[k] = Instance.instance_schema[k](v)
+            print(k, v)
+            self.features[k] = Instance.instance_schema[k](k,v)
 
 
     @staticmethod

@@ -1,4 +1,5 @@
 import json
+import numpy as np
 from collections import defaultdict
 from ..cefeature import CatCEFeature, NumCEFeature
 
@@ -28,6 +29,9 @@ class CEInstance():
     @staticmethod
     def create_empty_instance():
         return CEInstance("{}")
+
+    def to_numpy_array(self):
+        return np.array([feature.value for feature in self.features.values()])
 
     def __iter__(self):
         return iter(self.features.values())

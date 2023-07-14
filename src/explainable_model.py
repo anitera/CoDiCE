@@ -1,6 +1,7 @@
 from sklearn.base import BaseEstimator
 import pickle
 import numpy as np
+from ceinstance import CEInstance
 #from tensorflow.keras.models import Model as TFModel
 
 class ExplainableModel:
@@ -49,3 +50,15 @@ class ExplainableModel:
 
     def predict_proba(self, x):
         return self.model.predict_proba(x)
+
+    def predict_instance(self, x: CEInstance):
+        """
+        Predict instance
+        """
+        return self.predict(x.to_numpy_array().reshape(1, -1))
+        
+    def predict_proba_instance(self, x: CEInstance):
+        """
+        Predict instance
+        """
+        return self.predict_proba(x.to_numpy_array().reshape(1, -1))

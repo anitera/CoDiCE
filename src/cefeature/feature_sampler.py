@@ -1,25 +1,60 @@
 from src.cefeature.feature_sampler import ICEFeatureSampler
+import numpy as np
 from . import CEFeature
 from typing import List
 
 class ICEFeatureSampler(object):
-    def __init__(self):
-        pass
+    def __init__(self, feature_range):
+        self.feature_range = feature_range
+        #TODO add validation
+
+    def _uniform_sample(self):
+        assert len(self.feature_range) == 2, "Feature range must be a tuple of length 2" 
+        return np.random.uniform(self.feature_range[0], self.feature_range[1])
+
+    def _choice_sample(self):
+        return np.random.choice(self.feature_range)
 
     def sample(self, instance):
         raise NotImplementedError
 
-class MonotonicSampler(ICEFeatureSampler):
-    def __init__(self, feature: CEFeature, sign: int):
-        super().__init__()
-        self.feature = feature
-        self.sign = sign
+    def validate(self, value):
+        assert value >= self.feature_range[0] and value <= self.feature_range[1], "Value {} not in range {}".format(value, self.feature_range)
 
-    def _set_sign(self, sign):
-        self.sign = sign
+class UniformSampler(ICEFeatureSampler):
+    def __init__(self, feature: CEFeature):
+        super().__init__(feature.feature_range)
 
     def sample(self, instance):
-        pass
+        return self._uniform_sample()
+
+class ChoiceSampler(ICEFeatureSampler):
+    def __init__(self, feature: CEFeature):
+        super().__init__(feature.feature_range)
+
+    def sample(self, instance):
+        return self._choice_sample()
+
+class MonotonicSampler(ICEFeatureSampler):
+    def __init__(self, feature_range, feature: CEFeature, sign: int):
+        super().__init__(feature_range)
+        self.feature = feature
+        self._set_sign(sign)
+
+    def _set_sign(self, sign):
+        assert sign in [-1, 1], "Sign must be either -1 or 1"
+        self.sign = sign
+
+    def _increasing_sample(self):
+        assert self.sign == 1, "Sign must be 1 for increasing sample"
+        return np.random.uniform(self.feature.value, self.feature.feature_range[1])
+
+    def _decreasing_sample(self):
+        assert self.sign == -1, "Sign must be -1 for decreasing sample"
+        return np.random.uniform(self.feature.feature_range[0], self.feature.value)
+
+    def sample(self, instance):
+        return self._increasing_sample() if self.sign == 1 else self._decreasing_sample()
 
 class DependentSampler(ICEFeatureSampler):
     def __init__(self, main_feature: str):
@@ -72,7 +107,6 @@ class RuleDependency(ICEDependencyType):
         val = self._rule(mf_value, current_instance)
         feature_sampler.validate(val)
         return val
-
 
 
 class DependencySampler(ICEFeatureSampler):

@@ -1,7 +1,7 @@
 import json
 import numpy as np
 from collections import defaultdict
-from ..cefeature import CatCEFeature, NumCEFeature
+from src.cefeature import CatCEFeature, NumCEFeature
 
 
 class CEInstance():

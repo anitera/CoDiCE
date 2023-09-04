@@ -2,12 +2,12 @@ import sys
 import os
 
 # Specify the source directory path
-source_dir = './src'
+#source_dir = './src'
 
 # Add the source directory to the Python path
-sys.path.insert(0, source_dir)
+#sys.path.insert(0, source_dir)
 
-from train import get_transformations, train_model, load_dataset, split_dataset
+from src.train import get_transformations, train_model, load_dataset, split_dataset
 
 if __name__ == "__main__":
      # Load dataset

@@ -143,7 +143,7 @@ class GeneticOptimizer():
         population = population[:population_size]
         return population
     
-    def check_prediction(self, counterfactual_instance, desired_output):
+    def check_prediction_one(self, counterfactual_instance, desired_output):
         """Check if counterfactual instance is valid"""
         # check if counterfactual instance is valid
         if self.model.model_type == "classification":
@@ -160,6 +160,25 @@ class GeneticOptimizer():
                 return False
         else:
             return False
+        
+    def check_prediction_all(self, population, desired_output):
+        """Check if all counterfactual instances are valid"""
+        # check if counterfactual instance is valid
+        if self.model.model_type == "classification":
+            for i in range(len(population)):
+                counterfactual_prediction = self.model.predict(population[i])
+                if counterfactual_prediction != desired_output:
+                    return False
+            return True
+        elif self.model.model_type == "regression":
+            for i in range(len(population)):
+                counterfactual_prediction = self.model.predict(population[i])
+                if not desired_output[0] <= counterfactual_prediction <= desired_output[1]:
+                    return False
+            return True
+        else:
+            return False
+        
     
 
     def find_counterfactuals(self, query_instance, number_cf, desired_class, maxiterations):
@@ -190,11 +209,13 @@ class GeneticOptimizer():
         self.population = self.sort_population(self.population)
         fitness_history.append(self.population[0]["fitness"])
         best_candidates_history.append(self.population[0])
+        print("Parent generation")
+        print("Fitness: ", self.population[0]["fitness"])
 
         # until the stopping criteria is reached
         while iterations < maxiterations or len(self.counterfactuals) < number_cf:
             # if fitness is not improving for 5 generation break
-            if len(fitness_history) > 1 and abs(fitness_history[-2] - fitness_history[-1]) <= t and self.check_prediction(self.population[0], desired_output):
+            if len(fitness_history) > 1 and abs(fitness_history[-2] - fitness_history[-1]) <= t and self.check_prediction_all(self.population[:number_cf], desired_output):
                 stop_count += 1
             if stop_count > 4:
                 break

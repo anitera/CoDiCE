@@ -2,8 +2,11 @@ spartsity:  0.5
 initialization: random
 
 dataset:
-  type: csv
-  path: homeloan_data.csv
+  type: csv # or csv
+  path: datasets/homeloan_train.xls
+  continuous_features: ['ApplicantIncome','CoapplicantIncome','LoanAmount', 'Loan_Amount_Term', 'Credit_History']
+  categorical_features: ['Gender', 'Married', 'Dependents', 'Education', 'Self_Employed', 'Property_Area']
+  target: Loan_Status
 
 feature_manager:
   categorical_features:

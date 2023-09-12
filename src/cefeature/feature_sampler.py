@@ -1,4 +1,3 @@
-from src.cefeature.feature_sampler import ICEFeatureSampler
 import numpy as np
 from . import CEFeature
 from typing import List
@@ -100,7 +99,8 @@ class MonotonicDependency(ICEDependencyType):
         return val
 
 class RuleDependency(ICEDependencyType):
-    def __init__(self, rule_func: function) -> None:
+    # init with a function that takes mf_value and current_instance and returns a value
+    def __init__(self, rule_func) -> None:  
         self._rule = rule_func
 
     def sample(self, feature_sampler: ICEFeatureSampler, mf_value, current_instance):

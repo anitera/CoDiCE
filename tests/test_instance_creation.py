@@ -1,10 +1,13 @@
 import unittest
+import os
+import sys
 from collections import defaultdict
 import json
 from src.ceinstance import CEInstance
 from src.cefeature import CatCEFeature, NumCEFeature, CEFeatureType
 
 # Your Instance class here
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 class TestInstance(unittest.TestCase):
     def setUp(self):

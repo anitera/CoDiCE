@@ -1,6 +1,6 @@
 import numpy as np
 import random
-from src.ceinstance import CEInstanceSampler
+from src.ceinstance.instance_sampler import CEInstanceSampler
 
 class CFsearch:
     def __init__(self, data, model, algorithm="genetic", distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", sparsity_hp=0.2, coherence_hp=0.2, diversity_hp=0.2):
@@ -122,9 +122,11 @@ class GeneticOptimizer():
         feature_name = random.choice(self.feature_names)
         # mutate feature
         if self.feature_types_dict[feature_name] == "continuous":
+            pass
             # mutate continuous feature following sampler strategy
             #instance[feature_name] = random.uniform(self.data.minmax[feature_name][0], self.data.minmax[feature_name][1])
         else:
+            pass
             # mutate categorical feature following sampler strategy
             #instance[feature_name] = random.choice(self.data.categorical_features_dict[feature_name])
         return instance

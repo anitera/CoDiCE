@@ -1,16 +1,18 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+from src.config import Config
+
 class Dataset(object):
     """
     Dataset class loads raw data and store continious and categorical features
     """
     def __init__(self, config, outcome_column_name):
-        self.config = config.dataset
-        self.path = self.config.path
+        self.config = config
+        self.path = self.config["path"]
         self.outcome_column_name = outcome_column_name
         self.data = self.load_dataset()
-        self.continuous_features_list, self.categorical_features_list = self.load_features_type(self.config)
+        self.continuous_features_list, self.categorical_features_list = self.load_features_type()
 
         self.verify_features()
         self.preprocess_dataset()
@@ -19,19 +21,21 @@ class Dataset(object):
         """
         Load xls file
         """
-        if (self.config.type == "csv"):
+        if (self.config["type"] == "csv"):
             data = pd.read_csv(self.path)
+        elif (self.config["type"] == "xls"):
+            data = pd.read_excel(self.path, engine='xlrd')
         else:
             raise ValueError("Dataset type not supported")
         return data
 
-    def load_features_type(self, config):
+    def load_features_type(self):
         """
         Load features type from config file
         """
         try:
-            continuous_features = config['continuous_features']
-            categorical_features = config['categorical_features']
+            continuous_features = self.config['continuous_features']
+            categorical_features = self.config['categorical_features']
         except KeyError:
             print("No features type found in config file")
             continuous_features, categorical_features = self.infer_feature_type_from_dataset()

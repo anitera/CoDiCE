@@ -1,5 +1,6 @@
 import numpy as np
 import random
+from src.ceinstance import CEInstanceSampler
 
 class CFsearch:
     def __init__(self, data, model, algorithm="genetic", distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", sparsity_hp=0.2, coherence_hp=0.2, diversity_hp=0.2):
@@ -9,6 +10,8 @@ class CFsearch:
         self.distance_continuous = distance_continuous
         self.distance_categorical = distance_categorical
         self.loss_type = loss_type
+        # TODO make instance sampler parameter, louse coupling config per class, instance sampler should be outside
+        self.instance_sampler = CEInstanceSampler(self.config, self.data) # give as parameter instance_sampler
         self.objective_initialization(sparsity_hp, coherence_hp, diversity_hp)
 
 
@@ -86,16 +89,18 @@ class GeneticOptimizer():
         """Initialize the populationg following sampling strategy"""
         # initialize population
         population = []
+        counterfactual_instance = query_instance.copy()
+
         # generate population
         for i in range(population_size):
-            counterfactual_instance = query_instance.copy()
-            for feature_name in self.feature_names:
-                if self.feature_types_dict[feature_name] == "continuous":
-                    #counterfactual_instance[feature_name] = random.uniform(self.data.minmax[feature_name][0], self.data.minmax[feature_name][1])
-                    # Sample according to sampler strategy
-                else:
-                    #counterfactual_instance[feature_name] = random.choice(self.data.categorical_features_dict[feature_name])
-            population.append(counterfactual_instance)
+            new_instance = self.instance_sampler.sample(counterfactual_instance)
+            population.append(new_instance)
+            #for feature_name in self.feature_names:
+            #    if self.feature_types_dict[feature_name] == "continuous":
+            #        #counterfactual_instance[feature_name] = random.uniform(self.data.minmax[feature_name][0], self.data.minmax[feature_name][1])
+            #        # Sample according to sampler strategy
+            #    else:
+            #        #counterfactual_instance[feature_name] = random.choice(self.data.categorical_features_dict[feature_name])
         return population
 
     def one_point_crossover(self, parent1, parent2):

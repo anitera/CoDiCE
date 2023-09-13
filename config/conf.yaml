@@ -3,7 +3,7 @@ initialization: random
 
 dataset:
   type: csv # or csv
-  path: datasets/homeloan_train.xls
+  path: datasets/homeloan_clean.csv
   continuous_features: ['ApplicantIncome','CoapplicantIncome','LoanAmount', 'Loan_Amount_Term', 'Credit_History']
   categorical_features: ['Gender', 'Married', 'Dependents', 'Education', 'Self_Employed', 'Property_Area']
   target: Loan_Status

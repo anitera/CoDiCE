@@ -10,6 +10,7 @@ class ExplainableModel:
     """
     def __init__(self, model_config):
         self.config = model_config
+        self.model_type = self.config.model_type
         if (self.config.state == "pretrained"):
             self.model = self.load_model()
         else:
@@ -22,7 +23,32 @@ class ExplainableModel:
         Load model from pickle file
         """
         with open(self.config.model_path, 'rb') as f:
-            model = pickle.load(f)
+            if self.model_type == "sklearn":
+                try:
+                    import sklearn
+                    model = pickle.load(f)
+                except:
+                    raise Exception("Sklearn not installed or model can't be loaded")
+            #elif self.model_type == "tensorflow":
+            #    try:
+            #        import tensorflow as tf
+            #        model = tf.keras.models.load_model(f)
+            #    except:
+            #        raise Exception("Tensorflow not installed or model can't be loaded")
+            elif self.model_type == "pytorch":
+                try:
+                    import torch
+                    model = torch.load(f)
+                except:
+                    raise Exception("Pytorch not installed or model can't be loaded")
+            #elif self.model_type == "gpgomea":
+            #    try:
+            #        import gpgomea
+            #        model = gpgomea.load(f)
+            #    except:
+            #        raise Exception("GPGOMEA not installed or model can't be loaded")
+            else:
+                raise Exception("Model type {} not supported".format(self.model_type))
         return model
 
     def sanity_check(self):
@@ -62,3 +88,9 @@ class ExplainableModel:
         Predict instance
         """
         return self.predict_proba(x.to_numpy_array().reshape(1, -1))
+    
+    def train(self, model_config):
+        """
+        Train the basic model
+        """
+        return None

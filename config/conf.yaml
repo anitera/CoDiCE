@@ -17,7 +17,7 @@ feature_manager:
     feature_x: []
 
 model:
-  type: sklearn
+  model_type: sklearn
   state: pretrained
   name: LogisticRegression
-  path: models/logistic_regression.pkl
+  path: models/homeloan_logistic_model.pkl

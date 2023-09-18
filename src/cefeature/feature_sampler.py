@@ -3,7 +3,8 @@ from . import CEFeature
 from typing import List
 
 class ICEFeatureSampler(object):
-    def __init__(self, feature_range):
+    def __init__(self, feature_name, feature_range):
+        self.feature_name = feature_name
         self.feature_range = feature_range
         #TODO add validation
 
@@ -21,13 +22,21 @@ class ICEFeatureSampler(object):
         assert value >= self.feature_range[0] and value <= self.feature_range[1], "Value {} not in range {}".format(value, self.feature_range)
 
 class UniformSampler(ICEFeatureSampler):
-    def __init__(self, feature: CEFeature):
-        super().__init__(feature.feature_range)
+    def __init__(self, feature_name, feature_range):
+        super().__init__(feature_name, feature_range)
 
     def sample(self, instance):
         return self._uniform_sample()
+    
+class ImmutableSampler(ICEFeatureSampler):
+    def __init__(self, feature_name, feature_range):
+        super().__init__(feature_name, feature_range)
+
+    def sample(self, instance):
+        return instance.root[self.feature.name]
 
 class ChoiceSampler(ICEFeatureSampler):
+    """For categorical features"""
     def __init__(self, feature: CEFeature):
         super().__init__(feature.feature_range)
 
@@ -35,8 +44,8 @@ class ChoiceSampler(ICEFeatureSampler):
         return self._choice_sample()
 
 class MonotonicSampler(ICEFeatureSampler):
-    def __init__(self, feature_range, feature: CEFeature, sign: int):
-        super().__init__(feature_range)
+    def __init__(self, feature_name, feature_range, feature: CEFeature, sign: int):
+        super().__init__(feature_name, feature_range)
         self.feature = feature
         self._set_sign(sign)
 

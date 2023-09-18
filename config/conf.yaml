@@ -13,8 +13,8 @@ feature_manager:
     encoding: onehot # freqhot
   continuous_features:
     normalization: standard #minmax
-  constraints:
-    feature_x: []
+
+constraints_file: config/constraints_conf.json
 
 model:
   model_type: sklearn

@@ -106,6 +106,7 @@ class ExplainableModel:
             else:
                 raise ValueError(f"Cannot infer input shape for model type: {model_type}")
         elif self.config["model_type"] == "pytorch":
+            # jit store the model and extract the shape
             return True#self.model.input_shape
         else:
             raise Exception("Model type {} not supported".format(self.config.model_type))

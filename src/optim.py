@@ -3,7 +3,7 @@ import random
 from src.ceinstance.instance_sampler import CEInstanceSampler
 
 class CFsearch:
-    def __init__(self, data, model, algorithm="genetic", distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", sparsity_hp=0.2, coherence_hp=0.2, diversity_hp=0.2):
+    def __init__(self, data, model, feature_sampler, algorithm="genetic", distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", sparsity_hp=0.2, coherence_hp=0.2, diversity_hp=0.2):
         self.data = data
         self.model = model
         self.algorithm = algorithm
@@ -11,7 +11,7 @@ class CFsearch:
         self.distance_categorical = distance_categorical
         self.loss_type = loss_type
         # TODO make instance sampler parameter, louse coupling config per class, instance sampler should be outside
-        self.instance_sampler = CEInstanceSampler(self.config, self.data) # give as parameter instance_sampler
+        self.instance_sampler = feature_sampler # give as parameter instance_sampler
         self.objective_initialization(sparsity_hp, coherence_hp, diversity_hp)
 
 

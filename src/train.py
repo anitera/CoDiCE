@@ -7,7 +7,7 @@ import configparser
 import os
 from sklearn.model_selection import train_test_split
 import pandas as pd
-from explainable_model import ExplainableModel
+from src.explainable_model import ExplainableModel
 
 def load_dataset(confpath, datasetpath):
     # Read the configuration file

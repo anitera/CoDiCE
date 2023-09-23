@@ -1,34 +1,24 @@
 import json
 import numpy as np
 from collections import defaultdict
-from src.cefeature import CatCEFeature, NumCEFeature
-
 
 class CEInstance():
     """
     Represents a single instance of a dataset.
     Instance_schema is a dictionary that maps feature names to their types.
     """
-    instance_schema = defaultdict()
-    def __init__(self, json_string) -> None:
-        self.features = {}
-        json_dict = json.loads(json_string)
-        for k, v in json_dict.items():
-            print(k, v)
-            self.features[k] = CEInstance.instance_schema[k](k,v)
+    # def __init__(self, json_string) -> None:
+    #     self.features = {}
+    #     json_dict = json.loads(json_string)
+    #     for k, v in json_dict.items():
+    #         print(k, v)
+    #         self.features[k] = CEInstance.instance_schema[k](k,v)
 
+    def __init__(self, instance_schema, **kwargs) -> None:
+        self.featuers = defaultdict()
+        for fname, ftype in instance_schema.items():
+            self.feature[fname] = ftype(fname, kwargs.get(fname, ftype.default_value)) 
 
-    @staticmethod
-    def schema_from_lists(cat_list, cont_list):
-        for cat in cat_list:
-            CEInstance.instance_schema[cat] = CatCEFeature
-
-        for cont in cont_list:
-            CEInstance.instance_schema[cont] = NumCEFeature
-
-    @staticmethod
-    def create_empty_instance():
-        return CEInstance("{}")
 
     def to_numpy_array(self):
         return np.array([feature.value for feature in self.features.values()])

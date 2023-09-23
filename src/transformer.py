@@ -20,7 +20,7 @@ class FeatureTransformer(object):
         if self.feature_name in dataset.continuous_features_list:
             self.min, self.max, self.mean, self.std, self.median = self.calculate_statistics(dataset)
             self.original_range = self.get_from_dataset(dataset)
-            self.normalized_range = self.get_normalized_range(config, self.original_range, dataset)
+            self.normalized_range = self.get_normalized_range(config, dataset)
 
     def calculate_statistics(self, dataset):
         return dataset.data[self.feature_name].agg([min, max, np.mean, np.std, np.median]).to_dict()
@@ -29,9 +29,9 @@ class FeatureTransformer(object):
         return dataset.data[self.feature_name].agg([min, max]).to_dict()
     
     def get_normalized_range(self, config, dataset):
-        if config.continuous_features["normalization"] == "minmax":
+        if config["continuous_features"]["normalization"] == "minmax":
             return [0,1]
-        elif config.continuous_features["normalization"] == "standart":
+        elif config["continuous_features"]["normalization"] == "standard":
             # Calculate std for dataset[feature_name]
             standartised = (dataset.data[self.feature_name] - self.mean) / self.std
             return [standartised.min(), standartised.max()]

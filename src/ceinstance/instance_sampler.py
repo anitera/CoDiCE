@@ -1,15 +1,16 @@
 from . import CEInstance
 from ..cefeature.feature_sampler import ICEFeatureSampler
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from src.cefeature.feature_sampler import *
 import json
 
 class CEInstanceSampler(object):
-    def __init__(self, config, transformers):
+    def __init__(self, config, transformers, instance_factory):
         self.config = config
         self.constraints = self.read_constraints(config)
         self.transformers = transformers
         self.feature_samplers = OrderedDict(ICEFeatureSampler) #TODO make ordered
+        self.instance_factory = instance_factory
 
     def read_constraints(self, config):
         constraints = {}
@@ -69,13 +70,26 @@ class CEInstanceSampler(object):
             self.feature_samplers[feature_name] = ICEFeatureSampler(feature_transformer)
 
 
-    def sample(self, old_instance: CEInstance):
-        new_instance = CEInstance.create_empty_instance()
-        for feature_name, feature_sampler in self.feature_samplers.items(): # Assume samplers are ordered
-            sampled_features = feature_sampler.sample(old_instance)
-            for new_feature in sampled_features:
-                new_instance.features[new_feature.name] = new_feature #TODO check if feature was not sampled
+    # def sample(self, old_instance: CEInstance):
+    #     new_instance = CEInstance.create_empty_instance()
+    #     for feature_name, feature_sampler in self.feature_samplers.items(): # Assume samplers are ordered
+    #         sampled_features = feature_sampler.sample(old_instance)
+    #         for new_feature in sampled_features:
+    #             new_instance.features[new_feature.name] = new_feature #TODO check if feature was not sampled
 
-        return new_instance
+    #     return new_instance
+
+    def sample(self, old_instance: CEInstance):
+        sampled_features = defaultdict()
+        for target_fname, target_sampler in self.feature_samplers.items():
+            sampled_values = target_sampler.sample(old_instance)
+            for fname, fvalue in sampled_values.items():
+                if fname in sampled_features:
+                    raise ValueError(f"Feature {fname} already sampled")
+                sampled_features[fname] = fvalue
+
+        return self.instance_factory.create_instance(sampled_features)
+
+        
         
 

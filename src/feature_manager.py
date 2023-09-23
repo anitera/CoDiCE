@@ -11,6 +11,7 @@ class FeatureManager(object):
     Knows features permitted ranges. Performs normalization and denormalization.
     Calculates meadian abolute deviation of features.
     One-hot encodes categorical features.
+    #TODO init feature sampler from these class
     """
     def __init__(self, config, dataset: Dataset):
         self.config = config.feature_manager
@@ -18,6 +19,8 @@ class FeatureManager(object):
         self.categorical_features_list = self.dataset.categorical_features_list
         self.constraints = self.config.get_config_value('constraints')
         self.outcome_name = self.dataset.outcome_name
+
+        #TODO move to dataset_metadata
         self.init_transformation(dataset)
         self.normalized_train_data = None
         self.encoded_cat_data = None

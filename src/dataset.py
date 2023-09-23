@@ -1,5 +1,6 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from src.ceinstance import CEInstance
 
 class Dataset(object):
     """
@@ -14,6 +15,8 @@ class Dataset(object):
 
         self.verify_features()
         self.preprocess_dataset()
+        # TODO initialize schema
+        CEInstance.schema_from_lists(self.categorical_features_list, self.continuous_features_list)
 
     def load_dataset(self):
         """

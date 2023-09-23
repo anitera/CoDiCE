@@ -55,14 +55,16 @@ class CEInstanceSampler(object):
             constraints[feature_name] = constraint
         return constraints
 
-    def create_feature_samplers(self, transformers):
+    def create_feature_samplers(self, transformers, normalization=True):
         for feature_name, feature_transformer in transformers.continuous_features_transformers.items():
             # We iterate over dependent features first. If we have a dependency, we check the dependency type
             # We initialize the root feature and dependent feature
             # Then we iterate over left features and check the sample type
             if self.config["constraints"][feature_name] == "dependency":
-
-                self.feature_samplers[feature_name] = ICEFeatureSampler(feature_transformer)
+                if normalization:
+                    self.feature_samplers[feature_name] = ICEFeatureSampler(feature_name, feature_transformer.normalized_range)
+                else:
+                    self.feature_samplers[feature_name] = ICEFeatureSampler(feature_name, feature_transformer.original_range)
         for feature_name, feature_transformer in transformers.categorical_features_transformers.items():
             self.feature_samplers[feature_name] = ICEFeatureSampler(feature_transformer)
 

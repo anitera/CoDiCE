@@ -23,10 +23,11 @@ class FeatureTransformer(object):
             self.normalized_range = self.get_normalized_range(config, dataset)
 
     def calculate_statistics(self, dataset):
-        return dataset.data[self.feature_name].agg([min, max, np.mean, np.std, np.median]).to_dict()
+        return dataset.data[self.feature_name].agg([min, max, np.mean, np.std, np.median])
 
     def get_from_dataset(self, dataset):
-        return dataset.data[self.feature_name].agg([min, max]).to_dict()
+        aggregated_values = dataset.data[self.feature_name].agg([min, max])
+        return [aggregated_values['min'], aggregated_values['max']]
     
     def get_normalized_range(self, config, dataset):
         if config["continuous_features"]["normalization"] == "minmax":

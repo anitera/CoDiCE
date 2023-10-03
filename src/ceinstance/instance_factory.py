@@ -10,7 +10,7 @@ class InstanceFactory(object):
     """
     def __init__(self, dataset) -> None:
         self.instance_schema = defaultdict()
-        self._schema_from_lists(dataset.cat_list, dataset.cont_list)
+        self._schema_from_lists(dataset.categorical_features_list, dataset.continuous_features_list)
 
     def _schema_from_lists(self, cat_list, cont_list):
         for cat in cat_list:

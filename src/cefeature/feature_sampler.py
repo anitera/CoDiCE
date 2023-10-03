@@ -44,20 +44,20 @@ class ChoiceSampler(ICEFeatureSampler):
         return self._choice_sample()
 
 class MonotonicSampler(ICEFeatureSampler):
-    def __init__(self, feature_name, feature_range, sign: int):
+    def __init__(self, feature_name, feature_range, sign):
         super().__init__(feature_name, feature_range)
         self._set_sign(sign)
 
     def _set_sign(self, sign):
-        assert sign in [-1, 1], "Sign must be either -1 or 1"
+        assert sign in ["increasing", "decreasing"], "Sign must be either increasing or decreasing"
         self.sign = sign
 
     def _increasing_sample(self, feature_value):
-        assert self.sign == 1, "Sign must be 1 for increasing sample"
+        assert self.sign == "increasing", "Config must be increasing for increasing sample"
         return np.random.uniform(feature_value, self.feature_range[1])
 
     def _decreasing_sample(self, feature_value):
-        assert self.sign == -1, "Sign must be -1 for decreasing sample"
+        assert self.sign == "decreasing", "Config must be decreasing for decreasing sample"
         return np.random.uniform(self.feature_range[0], feature_value)
 
     def sample(self, instance):

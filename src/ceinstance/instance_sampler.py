@@ -5,20 +5,31 @@ from src.cefeature.feature_sampler import *
 import json
 
 class CEInstanceSampler(object):
-    def __init__(self, config, transformers, instance_factory):
+    def __init__(self, config, transformers, instance_factory, normalization=True):
         self.config = config
-        self.constraints = self.read_constraints(config)
         self.transformers = transformers
-        self.feature_samplers = OrderedDict(ICEFeatureSampler) #TODO make ordered
+        self.normalization = normalization
+        # initialize dictionary of feature_samples with ICEFeatureSampler
+        self.feature_samplers = OrderedDict()
+        self.constraints = self.read_constraints(config)     
         self.instance_factory = instance_factory
 
     def read_constraints(self, config):
         constraints = {}
-        with open(config["constraints_file"], 'r') as file:
+        with open(config.get_config_value("constraints_file"), 'r') as file:
             all_constraints = json.load(file)
 
         for feature_name, constraint in all_constraints["features"].items():
             print(f"Feature: {feature_name}")
+            # check if feature name is in continuous or categorical features transformers
+            if feature_name in self.transformers.continuous_features_transformers:
+                if self.normalization:
+                    feature_range = self.transformers.continuous_features_transformers[feature_name].normalized_range
+                else:
+                    feature_range = self.transformers.continuous_features_transformers[feature_name].original_range
+            elif feature_name in self.transformers.categorical_features_transformers:
+                feature_range = self.transformers.categorical_features_transformers[feature_name].feature_range
+            print(f"Range: {feature_range}")
             print(f"Constraint Type: {constraint['type']}")
 
             if constraint['type'] == 'dependency':
@@ -47,7 +58,7 @@ class CEInstanceSampler(object):
             # Additional logic based on constraint type
             if constraint['type'] == 'monotonic':
                 print(f"Direction: {constraint['direction']}")
-                sampler = MonotonicSampler(constraint['direction'])
+                sampler = MonotonicSampler(feature_name, feature_range, constraint['direction'])
                 self.feature_samplers[feature_name] = sampler
             elif constraint['type'] == 'immutable':
                 immutable_sample = ImmutableSampler()
@@ -57,6 +68,7 @@ class CEInstanceSampler(object):
         return constraints
 
     def create_feature_samplers(self, transformers, normalization=True):
+        """Probably this is old function that is not used anymore"""
         for feature_name, feature_transformer in transformers.continuous_features_transformers.items():
             # We iterate over dependent features first. If we have a dependency, we check the dependency type
             # We initialize the root feature and dependent feature

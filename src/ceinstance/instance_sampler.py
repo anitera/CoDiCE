@@ -28,7 +28,7 @@ class CEInstanceSampler(object):
                 else:
                     feature_range = self.transformers.continuous_features_transformers[feature_name].original_range
             elif feature_name in self.transformers.categorical_features_transformers:
-                feature_range = self.transformers.categorical_features_transformers[feature_name].feature_range
+                feature_range = self.transformers.categorical_features_transformers[feature_name].normalized_range
             print(f"Range: {feature_range}")
             print(f"Constraint Type: {constraint['type']}")
 

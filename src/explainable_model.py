@@ -23,7 +23,7 @@ class ExplainableModel:
         """
         Load model from pickle file
         """
-        with open(self.config["model_path"], 'rb') as f:
+        with open(self.config["path"], 'rb') as f:
             if self.model_type == "sklearn":
                 try:
                     import sklearn

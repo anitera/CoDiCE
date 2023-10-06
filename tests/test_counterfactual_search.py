@@ -33,7 +33,7 @@ class TestCFSearch(unittest.TestCase):
         self.instance_factory = InstanceFactory(self.data)
         self.sampler = CEInstanceSampler(self.config, self.normalization_transformer, self.instance_factory)
 
-        self.model = ExplainableModel(self.config.get_config_value("model"), self.data)
+        self.model = ExplainableModel(self.config.get_config_value("model"))
 
         self.search = CFsearch(self.data, self.model, self.sampler, algorithm="genetic", distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", sparsity_hp=0.2, coherence_hp=0.2, diversity_hp=0.2)
 

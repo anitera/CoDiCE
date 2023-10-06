@@ -19,53 +19,62 @@ class CEInstanceSampler(object):
         with open(config.get_config_value("constraints_file"), 'r') as file:
             all_constraints = json.load(file)
 
-        for feature_name, constraint in all_constraints["features"].items():
+        all_constraints = all_constraints["features"]
+
+        self._sort_constraints(all_constraints)
+
+        for feature_name, constraint in all_constraints.items():
             print(f"Feature: {feature_name}")
-            # check if feature name is in continuous or categorical features transformers
-            if feature_name in self.transformers.continuous_features_transformers:
-                if self.normalization:
-                    feature_range = self.transformers.continuous_features_transformers[feature_name].normalized_range
-                else:
-                    feature_range = self.transformers.continuous_features_transformers[feature_name].original_range
-            elif feature_name in self.transformers.categorical_features_transformers:
-                feature_range = self.transformers.categorical_features_transformers[feature_name].normalized_range
+            feature_range = self._get_feature_range(feature_name)
             print(f"Range: {feature_range}")
             print(f"Constraint Type: {constraint['type']}")
 
             if constraint['type'] == 'dependency':
+                print(f"Dependency Type: {constraint['dependencyType']}")
+                print(f"Root: {feature_name}")
+                child_feature = constraint['child']
+                child_range = self._get_feature_range(child_feature)
+                print(f"Child: {child_feature}")
+                print(f"Child Range: {child_range}")
                 if constraint['dependencyType'] == 'causal':
-                    print(f"Dependency Type: {constraint['dependencyType']}")
-                    print(f"Root: {constraint['root']}")
-                    print(f"Child: {constraint['child']}")
-                    causal_dep_type = CausalDependency()
-                    dep_sampler = DependencySampler(constraint['root'], constraint['child'], causal_dep_type)
-                    self.feature_samplers[feature_name] = dep_sampler
+                    try:
+                        child_sampler = self.feature_samplers[child_feature] # just use the sampler that was already created
+                    except KeyError:
+                        raise ValueError(f"Sampler {child_feature} not found")
                 elif constraint['dependencyType'] == 'monotonic_dependency':
-                    print(f"Dependency Type: {constraint['dependencyType']}")
-                    print(f"Root: {constraint['root']}")
-                    print(f"Child: {constraint['child']}")
-                    monotonic_dep_type = MonotonicDependency()
-                    dep_sampler = DependencySampler(constraint['root'], constraint['child'], monotonic_dep_type)
-                    self.feature_samplers[feature_name] = dep_sampler
+                    child_sampler = MonotonicSampler(child_feature, child_range, 0)
                 elif constraint['dependencyType'] == 'rule':
-                    print(f"Dependency Type: {constraint['dependencyType']}")
-                    print(f"Root: {constraint['root']}")
-                    print(f"Child: {constraint['child']}")
                     print(f"Rule: {constraint['rule']}")
-                    rule_dep_type = RuleDependency(constraint['rule'])
-                    dep_sampler = DependencySampler(constraint['root'], constraint['child'], rule_dep_type)
-                    self.feature_samplers[feature_name] = dep_sampler 
+                    child_sampler = RuleSampler(child_feature, child_range, constraint['rule'])
+
+                dep_sampler = DependencySampler(feature_name, feature_range, [child_sampler])
+                self.feature_samplers[feature_name] = dep_sampler 
             # Additional logic based on constraint type
-            if constraint['type'] == 'monotonic':
+            elif constraint['type'] == 'monotonic':
                 print(f"Direction: {constraint['direction']}")
                 sampler = MonotonicSampler(feature_name, feature_range, constraint['direction'])
                 self.feature_samplers[feature_name] = sampler
             elif constraint['type'] == 'immutable':
-                immutable_sample = ImmutableSampler()
+                immutable_sample = ImmutableSampler(feature_name, feature_range)
             # ... Add further conditions as necessary
+            else:
+                raise ValueError(f"Constraint type {constraint['type']} not supported")
             print("-----")
             constraints[feature_name] = constraint
         return constraints
+
+    def _get_feature_range(self, feature_name):
+        # check if feature name is in continuous or categorical features transformers
+        if feature_name in self.transformers.continuous_features_transformers:
+            if self.normalization:
+                feature_range = self.transformers.continuous_features_transformers[feature_name].normalized_range
+            else:
+                feature_range = self.transformers.continuous_features_transformers[feature_name].original_range
+        elif feature_name in self.transformers.categorical_features_transformers:
+            feature_range = self.transformers.categorical_features_transformers[feature_name].normalized_range
+
+
+        return feature_range
 
     def create_feature_samplers(self, transformers, normalization=True):
         """Probably this is old function that is not used anymore"""
@@ -102,6 +111,11 @@ class CEInstanceSampler(object):
 
         return self.instance_factory.create_instance(sampled_features)
 
+    def _sort_constraints(self, constraints):
+        sorted_dict = sorted(constraints.items(), key=lambda x: x[1]['type'] != 'dependency')
+        constraints = dict(sorted_dict)
+
+        
         
         
 

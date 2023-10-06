@@ -1,6 +1,6 @@
 import numpy as np
 from . import CEFeature
-from typing import List
+from typing import List, Any
 
 class ICEFeatureSampler(object):
     def __init__(self, feature_name, feature_range):
@@ -16,6 +16,9 @@ class ICEFeatureSampler(object):
         return np.random.choice(self.feature_range)
 
     def sample(self, instance):
+        raise NotImplementedError
+
+    def dependant_sample(self, instance, mf_value):
         raise NotImplementedError
 
     def validate(self, value):
@@ -64,14 +67,11 @@ class MonotonicSampler(ICEFeatureSampler):
         return self._increasing_sample(instance[self.feature_name]) if self.sign == 1 else self._decreasing_sample(instance[self.feature_name])
 
 class DependentSampler(ICEFeatureSampler):
-    def __init__(self, main_feature: str):
-        super().__init__()
+    def __init__(self, feature_name, feature_range, main_feature):
+        super().__init__(feature_name, feature_range)
         self.main_feature = main_feature
 
     def sample(self, instance):
-        pass
-
-    def validate(self, value):
         pass
 
 class ICEDependencyType(object):
@@ -82,6 +82,9 @@ class ICEDependencyType(object):
         pass
 
 class CausalDependency(ICEDependencyType):
+    """
+    default random sampling from feature range
+    """
     def __init__(self) -> None:
         pass
 
@@ -116,19 +119,26 @@ class RuleDependency(ICEDependencyType):
         feature_sampler.validate(val)
         return val
 
+class RuleSampler(ICEFeatureSampler):
+    def __init__(self, feature_name, feature_range, rule_func):
+        super().__init__(feature_name, feature_range)
+        self._rule = rule_func
+
+    def sample(self, instance):
+        return self._rule(instance.root[self.feature_name], instance)
+
 
 class DependencySampler(ICEFeatureSampler):
-    def __init__(self, main_feature: str, dep_features: List[str], rel_type):
-        super().__init__()
+    def __init__(self, main_feature: str, feature_range: List[Any], dep_features: List[ICEFeatureSampler]):
+        super().__init__(main_feature, feature_range)
         self.main_feature =  main_feature
         self.depndent_features = dep_features
-        self.rel_type = rel_type
 
     def sample(self, instance):
         mf_val = self.main_feature.sample(instance.root)
         result = [mf_val]
         for df in self.depndent_features:
-            df_val = self.rel_type.sample(df, mf_val, instance.root)
+            df_val = df.dependant_sample(instance.root, mf_val)
             result.append(df_val)
 
         return result

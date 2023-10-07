@@ -24,7 +24,7 @@ class TestCFSearch(unittest.TestCase):
             self.constraints = json.load(file)
         print(self.config)
 
-        self.target_instance_json = "dataset/instance.json"
+        self.target_instance_json = "datasets/instance.json"
         
 
     def test_cf_search(self):
@@ -35,10 +35,10 @@ class TestCFSearch(unittest.TestCase):
 
         self.model = ExplainableModel(self.config.get_config_value("model"))
 
-        self.search = CFsearch(self.data, self.model, self.sampler, algorithm="genetic", distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", sparsity_hp=0.2, coherence_hp=0.2, diversity_hp=0.2)
+        self.search = CFsearch(self.normalization_transformer, self.model, self.sampler, algorithm="genetic", distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", sparsity_hp=0.2, coherence_hp=0.2, diversity_hp=0.2)
 
         with open(self.target_instance_json, 'r') as file:
-            target_instance_json = json.load(file)
+            target_instance_json = file.read() #json.load(file)
 
         target_instance = self.instance_factory.create_instance_from_json(target_instance_json)
 

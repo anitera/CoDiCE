@@ -24,7 +24,7 @@ class InstanceFactory(object):
         return self.create_instance(dict_values)
 
     def create_instance(self, dict_values: dict):
-        return CEInstance(self.instance_schema, dict_values)
+        return CEInstance(instance_schema=self.instance_schema, values_dict=dict_values)
 
     def create_empty_instance(self):
         return CEInstance(self.instance_schema)

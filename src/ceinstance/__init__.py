@@ -14,10 +14,11 @@ class CEInstance():
     #         print(k, v)
     #         self.features[k] = CEInstance.instance_schema[k](k,v)
 
-    def __init__(self, instance_schema, **kwargs) -> None:
-        self.featuers = defaultdict()
-        for fname, ftype in instance_schema.items():
-            self.feature[fname] = ftype(fname, kwargs.get(fname, ftype.default_value)) 
+    def __init__(self, instance_schema, values_dict=None) -> None:
+        self.features = defaultdict()
+        if values_dict is not None:
+            for fname, ftype in instance_schema.items():
+                self.features[fname] = ftype(fname, values_dict.get(fname, ftype.default_value)) 
 
 
     def to_numpy_array(self):

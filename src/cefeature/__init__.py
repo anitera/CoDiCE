@@ -7,6 +7,7 @@ class CEFeatureType(Enum):
     BINARY = 3
 
 class CEFeature(object):
+    default_value = None
     def __init__(self, name: str, value: Any, ftype: CEFeatureType) -> None:
         self.name = name
         self.ftype = ftype
@@ -14,9 +15,11 @@ class CEFeature(object):
         self.sampled = False
 
 class CatCEFeature(CEFeature):
+    default_value = 0
     def __init__(self, name: str, value: Any) -> None:
         super().__init__(name, value,  CEFeatureType.CATEGORICAL)
 
 class NumCEFeature(CEFeature):
+    default_value = 0.0
     def __init__(self, name: str, value: Any) -> None:
         super().__init__(name, value, CEFeatureType.NUMERIC)

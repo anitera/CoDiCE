@@ -1,10 +1,11 @@
 import numpy as np
 import random
+from copy import copy
 from src.ceinstance.instance_sampler import CEInstanceSampler
 
 class CFsearch:
-    def __init__(self, data, model, feature_sampler, algorithm="genetic", distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", sparsity_hp=0.2, coherence_hp=0.2, diversity_hp=0.2):
-        self.data = data
+    def __init__(self, transformer, model, feature_sampler, algorithm="genetic", distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", sparsity_hp=0.2, coherence_hp=0.2, diversity_hp=0.2):
+        self.transformer = transformer
         self.model = model
         self.algorithm = algorithm
         self.distance_continuous = distance_continuous
@@ -16,8 +17,8 @@ class CFsearch:
 
 
     def objective_initialization(self, sparsity_hp, coherence_hp, diversity_hp):
-        self.diffusion_map = self.data.diffusion_map
-        self.mads = self.data.mads
+        self.diffusion_map = self.transformer.diffusion_map
+        self.mads = self.transformer.mads
         self.hyperparameters = [sparsity_hp, coherence_hp, diversity_hp]
         return self.hyperparameters
 
@@ -25,7 +26,7 @@ class CFsearch:
     def find_counterfactuals(self, query_instance, number_cf, desired_class, maxiterations=100):
         if self.algorithm == "genetic":
             # there might genetic related parameters, like population size, mutation rate etc.
-            optimizer = GeneticOptimizer(self.data, self.model, self.distance_continuous, self.distance_categorical, self.loss_type, self.hyperparameters, self.diffusion_map, self.mads)
+            optimizer = GeneticOptimizer(self.model, self.transformer, self.distance_continuous, self.distance_categorical, self.loss_type, self.hyperparameters, self.diffusion_map, self.mads)
             self.counterfactuals = optimizer.find_counterfactuals(query_instance, number_cf, desired_class, maxiterations)
         return self.counterfactuals
     
@@ -39,23 +40,16 @@ class CFsearch:
 
 
 class GeneticOptimizer():
-    def __init__(self, data, model, distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", hyperparameters=[0.2, 0.2, 0.2], diffusion_map=None, mads=None):
+    def __init__(self, model, transformer, distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", hyperparameters=[0.2, 0.2, 0.2], diffusion_map=None, mads=None):
         """Initialize data metaparmeters and model"""
-        self.data = data
         self.model = model
+        self.transformer = transformer
         self.distance_continuous = distance_continuous
         self.distance_categorical = distance_categorical
         self.loss_type = loss_type
         self.diffusion_map = diffusion_map
         self.mads = mads
         self.hyperparameters = hyperparameters
-        self.continuous_features_list = data.continuous_features_list
-        self.categorical_features_list = data.categorical_features_list
-        self.config = data.config
-        self.outcome_column_name = data.outcome_column_name
-        self.feature_names = self.continuous_features_list + self.categorical_features_list
-        self.feature_types = ["continuous"] * len(self.continuous_features_list) + ["categorical"] * len(self.categorical_features_list)
-        self.feature_types_dict = {k: v for k, v in zip(self.feature_names, self.feature_types)}
 
     def fitness_function(self, counterfactual_instance, query_instance, desired_output, hyperparameters):
         """Calculate fitness function which consist of loss function and distance function"""
@@ -193,8 +187,8 @@ class GeneticOptimizer():
         # population size might be parameter or depend on number cf required
         population_size = 10*number_cf
         # prepare data instance to format and transform categorical features
-        query_instance = self.data.prepare_query_instance(query_instance)
-        query_original = query_instance.copy()
+        query_original = copy(query_instance)
+        query_instance = self.transformer.normalize_instance(query_instance)
         # find predictive value of original instance
         original_prediction = self.model.predict(query_instance)
         # set desired class to be opposite of original instance

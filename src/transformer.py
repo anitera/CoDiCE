@@ -5,11 +5,31 @@ class Transformer(object):
         self.continuous_features_transformers = self.get_cont_features_transformers(dataset, config)
         self.categorical_features_transformers = self.get_cat_features_transformers(dataset, config)
 
+        self.diffusion_map = self._get_diffusion_map(dataset, config)
+        self.mads = self._get_mads(dataset, config)
+
+    def normalize_instance(self, instance):
+        for feature_name, feature in instance.features.items():
+            if feature_name in self.continuous_features_transformers:
+                feature.value = self.continuous_features_transformers[feature_name].normalize_cont_value(feature.value) #TODO check for over-assignment
+            elif feature_name in self.categorical_features_transformers:
+                feature.value = self.categorical_features_transformers[feature_name].normalize_cat_value(feature.value)
+            else:
+                raise ValueError("Feature name is not in continuous or categorical features list")
+
     def get_cont_features_transformers(self, dataset, config):
         return {feature_name: FeatureTransformer(dataset, config, feature_name) for feature_name in dataset.continuous_features_list}
 
     def get_cat_features_transformers(self, dataset, config):
         return {feature_name: FeatureTransformer(dataset, config, feature_name) for feature_name in dataset.categorical_features_list}
+
+    def _get_diffusion_map(self, dataset, config):
+        """#TODO"""
+        return -1
+
+    def _get_mads(self, dataset, ocnfig):
+        """#TODO"""
+        return -1
 
 class FeatureTransformer(object):
     """
@@ -19,10 +39,30 @@ class FeatureTransformer(object):
         self.feature_name = feature_name
         if self.feature_name in dataset.continuous_features_list:
             self.min, self.max, self.mean, self.std, self.median = self.calculate_statistics(dataset)
+            self.norm_type = config["continuous_features"]["normalization"]
+            if self.norm_type == "minmax":
+                self.normalize_cont_value = lambda x: (x - self.min) / (self.max - self.min)
+                self.denormalize_cont_value = lambda x: x * (self.max - self.min) + self.min
+            elif self.norm_type == "standard":
+                self.normalize_cont_value = lambda x: (x - self.mean) / self.std
+                self.denormalize_cont_value = lambda x: x * self.std + self.mean
+
             self.original_range = self.get_from_dataset(dataset)
-            self.normalized_range = self.get_normalized_range(config, dataset)
+            self.normalized_range = self.get_normalized_range(dataset)
         elif self.feature_name in dataset.categorical_features_list:
             self.original_range = self.get_feature_choice(dataset)
+            self.enc_type = config["categorical_features"]["encoding"] #TODO this could be done better with OOP
+            if self.enc_type == "onehot":
+                self.normalize_cat_value = self._onehot_enc
+                self.denormalize_cat_value = self._onehot_dec
+            elif self.enc_type == "ordinal":
+                self.normalize_cat_value = self._ordinal_enc
+                self.denormalize_cat_value = self._ordinal_dec
+            elif self.enc_type == "frequency":
+                self.normalize_cat_value = self._freq_enc
+                self.denormalize_cat_value = self._freq_dec
+            else:
+                raise ValueError("Encoding type is not supported")
             self.normalized_range = self.apply_encoding(config, dataset)
         else:
             raise ValueError("Feature name is not in continuous or categorical features list")
@@ -38,51 +78,70 @@ class FeatureTransformer(object):
         return dataset.data[self.feature_name].unique()
     
     def apply_encoding(self, config, dataset):
-        if config["categorical_features"]["encoding"] == "onehot":
+        """Return feature range for categorical features"""
+        if self.enc_type == "onehot":
             return [0,1]
-        elif config["categorical_features"]["encoding"] == "ordinal":
+        elif self.enc_type == "ordinal":
             number_categories = len(dataset.data[self.feature_name].unique())
             return [0, number_categories-1]
-        elif config["categorical_features"]["encoding"] == "frequency":
+        elif self.enc_type == "frequency":
             raise NotImplementedError
         else:
             raise ValueError("Encoding type is not supported")
     
-    def get_normalized_range(self, config, dataset):
-        if config["continuous_features"]["normalization"] == "minmax":
+    def get_normalized_range(self, dataset):
+        if self.norm_type == "minmax":
             return [0,1]
-        elif config["continuous_features"]["normalization"] == "standard":
+        elif self.norm_type == "standard":
             # Calculate std for dataset[feature_name]
             standartised = (dataset.data[self.feature_name] - self.mean) / self.std
             return [standartised.min(), standartised.max()]
         else:
             raise ValueError("Normalization type is not supported")
 
-    def normalize_cont_value(self, config, original_value):
-        if config.continuous_features["normalization"] == "minmax":
-            return (original_value - self.min) / (self.max - self.min)
-        elif config.continuous_features["normalization"] == "standart":
-            return (original_value - self.mean) / self.std
+    # def normalize_cont_value(self, config, original_value):
+    #     if config.continuous_features["normalization"] == "minmax":
+    #         return (original_value - self.min) / (self.max - self.min)
+    #     elif config.continuous_features["normalization"] == "standart":
+    #         return (original_value - self.mean) / self.std
+
+    # def denormalize_cont_value(self, config, normalized_value):
+    #     if config.continuous_features["normalization"] == "minmax":
+    #         return normalized_value * (self.max - self.min) + self.min
+    #     elif config.continuous_features["normalization"] == "standart":
+    #         return normalized_value * self.std + self.mean
     
-    def denormalize_cont_value(self, config, normalized_value):
-        if config.continuous_features["normalization"] == "minmax":
-            return normalized_value * (self.max - self.min) + self.min
-        elif config.continuous_features["normalization"] == "standart":
-            return normalized_value * self.std + self.mean
-    
-    def normalize_cat_value(self, config, original_value):
-        """The ordinal encoding looks weird, todo check it later"""
-        if config.categorical_features["encoding"] == "onehot":
-            return 1
-        elif config.categorical_features["encoding"] == "ordinal":
-            return original_value
-        elif config.categorical_features["encoding"] == "frequency":
-            raise NotImplementedError
+    # def normalize_cat_value(self, config, original_value):
+    #     """The ordinal encoding looks weird, todo check it later"""
+    #     if config.categorical_features["encoding"] == "onehot":
+    #         return 1
+    #     elif config.categorical_features["encoding"] == "ordinal":
+    #         return original_value
+    #     elif config.categorical_features["encoding"] == "frequency":
+    #         raise NotImplementedError
         
-    def denormalize_cat_value(self, config, normalized_value):
-        if config.categorical_features["encoding"] == "onehot":
-            return 1
-        elif config.categorical_features["encoding"] == "ordinal":
-            return normalized_value
-        elif config.categorical_features["encoding"] == "frequency":
-            raise NotImplementedError
+    # def denormalize_cat_value(self, config, normalized_value):
+    #     if config.categorical_features["encoding"] == "onehot":
+    #         return 1
+    #     elif config.categorical_features["encoding"] == "ordinal":
+    #         return normalized_value
+    #     elif config.categorical_features["encoding"] == "frequency":
+    #         raise NotImplementedError
+        
+    def _onehot_enc(self, value):
+        return 1
+    
+    def _ordinal_enc(self, value):
+        return value
+
+    def _freq_enc(self, value):
+        raise NotImplementedError
+
+    def _onehot_dec(self, value):
+        return 1
+    
+    def _ordinal_dec(self, value):
+        return value
+
+    def _freq_dec(self, value):
+        raise NotImplementedError

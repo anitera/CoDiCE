@@ -9,6 +9,7 @@ class Transformer(object):
         self.mads = self._get_mads(dataset, config)
 
     def normalize_instance(self, instance):
+        """Return normalize instance"""
         for feature_name, feature in instance.features.items():
             if feature_name in self.continuous_features_transformers:
                 feature.value = self.continuous_features_transformers[feature_name].normalize_cont_value(feature.value) #TODO check for over-assignment
@@ -16,6 +17,7 @@ class Transformer(object):
                 feature.value = self.categorical_features_transformers[feature_name].normalize_cat_value(feature.value)
             else:
                 raise ValueError("Feature name is not in continuous or categorical features list")
+        
 
     def get_cont_features_transformers(self, dataset, config):
         return {feature_name: FeatureTransformer(dataset, config, feature_name) for feature_name in dataset.continuous_features_list}

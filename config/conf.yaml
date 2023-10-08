@@ -17,7 +17,8 @@ feature_manager:
 constraints_file: config/constraints_conf.json
 
 model:
-  model_type: sklearn
+  model_type: classification
+  model_backend: sklearn
   state: pretrained
   name: LogisticRegression
   path: models/homeloan_logistic_model.pkl

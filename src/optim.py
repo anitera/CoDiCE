@@ -4,7 +4,7 @@ from copy import copy
 from src.ceinstance.instance_sampler import CEInstanceSampler
 
 class CFsearch:
-    def __init__(self, transformer, model, feature_sampler, algorithm="genetic", distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", sparsity_hp=0.2, coherence_hp=0.2, diversity_hp=0.2):
+    def __init__(self, transformer, model, sampler, algorithm="genetic", distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", sparsity_hp=0.2, coherence_hp=0.2, diversity_hp=0.2):
         self.transformer = transformer
         self.model = model
         self.algorithm = algorithm
@@ -12,7 +12,7 @@ class CFsearch:
         self.distance_categorical = distance_categorical
         self.loss_type = loss_type
         # TODO make instance sampler parameter, louse coupling config per class, instance sampler should be outside
-        self.instance_sampler = feature_sampler # give as parameter instance_sampler
+        self.instance_sampler = sampler # give as parameter instance_sampler
         self.objective_initialization(sparsity_hp, coherence_hp, diversity_hp)
 
 
@@ -26,7 +26,7 @@ class CFsearch:
     def find_counterfactuals(self, query_instance, number_cf, desired_class, maxiterations=100):
         if self.algorithm == "genetic":
             # there might genetic related parameters, like population size, mutation rate etc.
-            optimizer = GeneticOptimizer(self.model, self.transformer, self.distance_continuous, self.distance_categorical, self.loss_type, self.hyperparameters, self.diffusion_map, self.mads)
+            optimizer = GeneticOptimizer(self.model, self.transformer, self.instance_sampler, self.distance_continuous, self.distance_categorical, self.loss_type, self.hyperparameters, self.diffusion_map, self.mads)
             self.counterfactuals = optimizer.find_counterfactuals(query_instance, number_cf, desired_class, maxiterations)
         return self.counterfactuals
     
@@ -40,7 +40,7 @@ class CFsearch:
 
 
 class GeneticOptimizer():
-    def __init__(self, model, transformer, distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", hyperparameters=[0.2, 0.2, 0.2], diffusion_map=None, mads=None):
+    def __init__(self, model, transformer, instance_sampler, distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", hyperparameters=[0.2, 0.2, 0.2], diffusion_map=None, mads=None):
         """Initialize data metaparmeters and model"""
         self.model = model
         self.transformer = transformer
@@ -50,6 +50,7 @@ class GeneticOptimizer():
         self.diffusion_map = diffusion_map
         self.mads = mads
         self.hyperparameters = hyperparameters
+        self.instance_sampler = instance_sampler
 
     def fitness_function(self, counterfactual_instance, query_instance, desired_output, hyperparameters):
         """Calculate fitness function which consist of loss function and distance function"""
@@ -83,7 +84,7 @@ class GeneticOptimizer():
         """Initialize the populationg following sampling strategy"""
         # initialize population
         population = []
-        counterfactual_instance = query_instance.copy()
+        counterfactual_instance = copy(query_instance)
 
         # generate population
         for i in range(population_size):
@@ -188,9 +189,9 @@ class GeneticOptimizer():
         population_size = 10*number_cf
         # prepare data instance to format and transform categorical features
         query_original = copy(query_instance)
-        query_instance = self.transformer.normalize_instance(query_instance)
+        self.transformer.normalize_instance(query_instance)
         # find predictive value of original instance
-        original_prediction = self.model.predict(query_instance)
+        original_prediction = self.model.predict_instance(query_instance)
         # set desired class to be opposite of original instance
         if desired_class == "opposite" and self.model.model_type == "classification":
             desired_output = 1 - original_prediction

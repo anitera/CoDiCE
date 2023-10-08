@@ -12,6 +12,7 @@ class ExplainableModel:
     def __init__(self, model_config):
         self.config = model_config
         self.model_type = self.config["model_type"]
+        self.model_backend = self.config["model_backend"]
         if (self.config["state"] == "pretrained"):
             self.model = self.load_model()
         else:
@@ -24,7 +25,7 @@ class ExplainableModel:
         Load model from pickle file
         """
         with open(self.config["path"], 'rb') as f:
-            if self.model_type == "sklearn":
+            if self.model_backend == "sklearn":
                 try:
                     import sklearn
                     self.model = load(f)
@@ -40,7 +41,7 @@ class ExplainableModel:
             #        model = tf.keras.models.load_model(f)
             #    except:
             #        raise Exception("Tensorflow not installed or model can't be loaded")
-            elif self.model_type == "pytorch":
+            elif self.model_backend == "pytorch":
                 try:
                     import torch
                     self.model = torch.load(f)
@@ -77,7 +78,7 @@ class ExplainableModel:
         """
         Get input shape of base estimator
         """
-        if self.config["model_type"] == "sklearn":
+        if self.config["model_backend"] == "sklearn":
             # get the shape of the input of the first step of the pipeline
             # Determine the type of the model
             model_type = type(self.model).__name__
@@ -105,7 +106,7 @@ class ExplainableModel:
             
             else:
                 raise ValueError(f"Cannot infer input shape for model type: {model_type}")
-        elif self.config["model_type"] == "pytorch":
+        elif self.config["model_backend"] == "pytorch":
             # jit store the model and extract the shape
             return True#self.model.input_shape
         else:

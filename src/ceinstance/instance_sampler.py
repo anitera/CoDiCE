@@ -46,8 +46,15 @@ class CEInstanceSampler(object):
                 elif constraint['dependencyType'] == 'rule':
                     print(f"Rule: {constraint['rule']}")
                     child_sampler = RuleSampler(child_feature, child_range, constraint['rule'])
+                else:
+                    raise ValueError(f"Dependency type {constraint['dependencyType']} not supported")
 
-                dep_sampler = DependencySampler(feature_name, feature_range, [child_sampler])
+                try:
+                    root_sampler = self.feature_samplers[feature_name]
+                except  KeyError:
+                    raise ValueError(f"Root sampler {feature_name} not found")
+
+                dep_sampler = DependencySampler(root_sampler, [child_sampler])
                 self.feature_samplers[feature_name] = dep_sampler 
             # Additional logic based on constraint type
             elif constraint['type'] == 'monotonic':

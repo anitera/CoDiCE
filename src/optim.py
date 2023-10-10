@@ -52,32 +52,31 @@ class GeneticOptimizer():
         self.hyperparameters = hyperparameters
         self.instance_sampler = instance_sampler
 
-    def fitness_function(self, counterfactual_instance, query_instance, desired_output, hyperparameters):
+    def fitness_function(self, counterfactual_instance, query_instance, desired_output):
         """Calculate fitness function which consist of loss function and distance function"""
         # calculate loss function depending on task classification or regression
         if self.loss_type == "hinge_loss":
-            original_prediction = self.model.predict(query_instance)
-            counterfactual_prediction = self.model.predict(counterfactual_instance)
+            original_prediction = self.model.predict_instance(query_instance)
+            counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
             loss = max(0, 1 - original_prediction * counterfactual_prediction)
         # calculate distance function depending on distance type
         if self.distance_continuous == "weighted_l1":
             distance_continuous = 0
             # apply weights depending if it's categorical or continuous feature weighted with inverse MAD from train data
             # TODO: add weights for categorical and continious features
-            for feature_name in self.feature_names:
-                if self.feature_types_dict[feature_name] == "continuous":
-                    distance_continuous += abs(query_instance[feature_name] - counterfactual_instance[feature_name])
+            for feature_name in self.transformer.continuous_features_transformers:
+                distance_continuous += abs(query_instance.features[feature_name].value - counterfactual_instance.features[feature_name].value)
             
         if self.distance_categorical == "weighted_l1":
             distance_categorical = 0
             # apply weights depending if it's categorical or continuous feature weighted with inverse MAD from train data
             # TODO: add weights for categorical and continious features
-            for feature_name in self.feature_names:
-                if self.feature_types_dict[feature_name] == "categorical":
-                    distance_categorical += query_instance[feature_name] != counterfactual_instance[feature_name]
+            for feature_name in self.transformer.categorical_features_transformers:
+                distance_categorical += query_instance.features[feature_name].value != counterfactual_instance.features[feature_name].value
         distance = distance_continuous + distance_categorical
         # calculate fitness function
-        fitness = hyperparameters[0]*loss + hyperparameters[1]*distance
+        # TODO: normalize distance and loss
+        fitness = self.hyperparameters[0]*loss + self.hyperparameters[1]*distance
         return fitness
 
     def generate_population(self, query_instance, population_size):
@@ -99,10 +98,10 @@ class GeneticOptimizer():
         return population
 
     def one_point_crossover(self, parent1, parent2):
-        """Perform one point crossover"""
+        """Perform one point crossover. TODO: crossover needs feature selection and OOP aaproach"""
         arr1 = np.array(list(parent1.values()))
         arr2 = np.array(list(parent2.values()))
-        # choose random point
+        # choose random pointone_
         crossover_point = random.randint(1, len(arr1))
         child1_arr = np.concatenate((arr1[:crossover_point], arr2[crossover_point:]))
         child2_arr = np.concatenate((arr2[:crossover_point], arr1[crossover_point:]))
@@ -129,15 +128,19 @@ class GeneticOptimizer():
     def evaluate_population(self, population, query_instance, desired_output):
         """Evaluate the population by calculating fitness function"""
         # evaluate population
+        fitness = []
         for i in range(len(population)):
-            population[i]["fitness"] = self.fitness_function(population[i], query_instance, desired_output)
-        return population
+            fitness.append(self.fitness_function(population[i], query_instance, desired_output))
+        return fitness
 
-    def sort_population(self, population):
+    def sort_population(self, population, fitness_list):
         """Sort the population by fitness function"""
-        # sort population
-        population = sorted(population, key=lambda k: k["fitness"])
-        return population
+        # sort population according to fitness list
+        paired_population = zip(population, fitness_list)      
+        sorted_population = sorted(paired_population, key=lambda x: x[1], reverse=True)
+        sorted_population, sorted_fitness_values = zip(*sorted_population)
+    
+        return list(sorted_population), list(sorted_fitness_values)
 
     def select_population(self, population, population_size):
         """Select the population by truncation"""
@@ -207,12 +210,12 @@ class GeneticOptimizer():
         t = 1e-2
         stop_count = 0
         self.population = self.generate_population(query_instance, population_size)
-        self.population = self.evaluate_population(self.population, query_instance, desired_output)
-        self.population = self.sort_population(self.population)
-        fitness_history.append(self.population[0]["fitness"])
-        best_candidates_history.append(self.population[0])
+        fitness_list = self.evaluate_population(self.population, query_instance, desired_output)
+        self.sorted_population, sorted_fitness = self.sort_population(self.population, fitness_list)
+        fitness_history.append(sorted_fitness[0])
+        best_candidates_history.append(self.sorted_population[0])
         print("Parent generation")
-        print("Fitness: ", self.population[0]["fitness"])
+        print("Fitness: ", sorted_fitness[0])
 
         # until the stopping criteria is reached
         while iterations < maxiterations or len(self.counterfactuals) < number_cf:

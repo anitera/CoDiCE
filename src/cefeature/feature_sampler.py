@@ -84,52 +84,6 @@ class MonotonicSampler(ICEFeatureSampler):
         self.sign = self._define_sign(fvalue, instance.features[fname].value)
         return self._sample(instance.features[self.feature_name].value)
 
-class DependentSampler(ICEFeatureSampler):
-    def __init__(self, feature_name, feature_range, main_feature):
-        super().__init__(feature_name, feature_range)
-        self.main_feature = main_feature
-
-    def sample(self, instance):
-        pass
-
-class ICEDependencyType(object):
-    def __init__(self):
-        pass
-
-    def sample(self, feature_sampler: ICEFeatureSampler, mf_value, current_instance):
-        pass
-
-class CausalDependency(ICEDependencyType):
-    """
-    default random sampling from feature range
-    """
-    def __init__(self) -> None:
-        pass
-
-    def sample(self, feature_sampler: ICEFeatureSampler, mf_value, current_instance):
-        return feature_sampler.sample(current_instance)
-
-class MonotonicDependency(ICEDependencyType):
-    def __init__(self) -> None:
-        pass
-
-
-    def sample(self, feature_sampler: ICEFeatureSampler, mf_value, current_instance):
-        sign = self._define_sign(mf_value, current_instance.root[self.main_feature])
-        feature_sampler.set_sign(sign)
-        val = feature_sampler.sample(current_instance)
-        return val
-
-class RuleDependency(ICEDependencyType):
-    # init with a function that takes mf_value and current_instance and returns a value
-    def __init__(self, rule_func) -> None:  
-        self._rule = rule_func
-
-    def sample(self, feature_sampler: ICEFeatureSampler, mf_value, current_instance):
-        val = self._rule(mf_value, current_instance)
-        feature_sampler.validate(val)
-        return val
-
 class RuleSampler(ICEFeatureSampler):
     def __init__(self, feature_name, feature_range, rule_func):
         super().__init__(feature_name, feature_range)
@@ -140,15 +94,38 @@ class RuleSampler(ICEFeatureSampler):
 
 
 class DependencySampler(ICEFeatureSampler):
-    def __init__(self, main_feature: ICEFeatureSampler, dep_features: List[ICEFeatureSampler]):
-        super().__init__(main_feature.feature_name, main_feature.feature_range)
-        self.main_feature =  main_feature
-        self.depndent_features = dep_features
+    def __init__(self, feature_name, feature_range):
+        super().__init__(feature_name, feature_range)
+        self.depndent_features = []
+
+    def add_dependent_feature(self, feature: ICEFeatureSampler):
+        self.depndent_features.append(feature)
 
     def sample(self, instance: CEInstance):
-        result = self.main_feature.sample(instance)
+        result = {self.feature_name: self._sample(instance.features[self.feature_name].value)}
         for df in self.depndent_features:
             df_val = df.dependant_sample(instance, result)
             result.update(df_val)
 
         return result
+
+
+class UniformDependencySampler(UniformSampler, DependencySampler):
+    def __init__(self, feature_name, feature_range):
+        DependencySampler.__init__(self, feature_name, feature_range)
+        UniformSampler.__init__(self, feature_name, feature_range)
+
+class ChoiceDependencySampler(ChoiceSampler, DependencySampler):
+    def __init__(self, feature_name, feature_range):
+        DependencySampler.__init__(self, feature_name, feature_range)
+        ChoiceSampler.__init__(self, feature_name, feature_range)
+
+class MonotonicDependencySampler(MonotonicSampler, DependencySampler):
+    def __init__(self, feature_name, feature_range, sign):
+        DependencySampler.__init__(self, feature_name, feature_range)
+        MonotonicSampler.__init__(self, feature_name, feature_range, sign)
+
+class RuleDependencySampler(RuleSampler, DependencySampler):
+    def __init__(self, feature_name, feature_range, rule_func):
+        DependencySampler.__init__(self, feature_name, feature_range)
+        RuleSampler.__init__(self, feature_name, feature_range, rule_func)

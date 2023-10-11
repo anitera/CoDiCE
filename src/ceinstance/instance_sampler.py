@@ -41,26 +41,21 @@ class CEInstanceSampler(object):
                 print(f"Child Range: {child_range}")
                 if constraint['dependencyType'] == 'causal':
                     try:
-                        child_sampler = self.feature_samplers.pop(child_feature) # just use the sampler that was already created
+                        child_sampler = self.feature_samplers[child_feature] # just use the sampler that was already created
                     except KeyError:
                         raise ValueError(f"Sampler {child_feature} not found")
                 elif constraint['dependencyType'] == 'monotonic_dependency':
                     child_sampler = MonotonicSampler(child_feature, child_range, 0)
-                    del self.feature_samplers[child_feature]
                 elif constraint['dependencyType'] == 'rule':
                     print(f"Rule: {constraint['rule']}")
                     child_sampler = RuleSampler(child_feature, child_range, constraint['rule'])
-                    del self.feature_samplers[child_feature]
                 else:
                     raise ValueError(f"Dependency type {constraint['dependencyType']} not supported")
 
-                try:
-                    root_sampler = self.feature_samplers[feature_name]
-                except  KeyError:
-                    root_sampler = self._create_default_samplers(feature_name)
-                    logging.warning(f"Sampler {feature_name} not found. Using default sampler")
+                del self.feature_samplers[child_feature]
 
-                dep_sampler = DependencySampler(root_sampler, [child_sampler])
+                dep_sampler = self._create_default_samplers(feature_name, is_dependency=True)
+                dep_sampler.add_dependent_feature(child_sampler)
                 self.feature_samplers[feature_name] = dep_sampler 
             else:
                 self.feature_samplers[feature_name] = self._create_sampler_from_constraint(feature_name, constraint)
@@ -69,7 +64,7 @@ class CEInstanceSampler(object):
             constraints[feature_name] = constraint
         return constraints
 
-    def _create_default_samplers(self, feature_name):
+    def _create_default_samplers(self, feature_name, is_dependency=False):
         feature_range = self._get_feature_range(feature_name)
         print(f"Feature: {feature_name}")
         print(f"Range: {feature_range}")
@@ -77,10 +72,16 @@ class CEInstanceSampler(object):
         if inspect.isclass(self.instance_factory.instance_schema[feature_name]):
             if issubclass(self.instance_factory.instance_schema[feature_name], NumCEFeature):
                 # Do something if the feature is a numerical feature
-                sampler = UniformSampler(feature_name, feature_range)
+                if is_dependency:
+                    sampler= UniformDependencySampler(feature_name, feature_range)
+                else:
+                    sampler = UniformSampler(feature_name, feature_range)
             elif issubclass(self.instance_factory.instance_schema[feature_name], CatCEFeature):
                 # Do something if the feature is a categorical feature
-                sampler = ChoiceSampler(feature_name, feature_range)
+                if is_dependency:
+                    sampler = ChoiceDependencySampler(feature_name, feature_range)
+                else:
+                    sampler = ChoiceSampler(feature_name, feature_range)
             else:
                 # Do something else if the feature is not a numerical or categorical feature
                 raise ValueError(f"Feature type {type(self.instance_factory.instance_schema[feature_name])} not supported")

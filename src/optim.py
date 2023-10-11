@@ -2,6 +2,7 @@ import numpy as np
 import random
 from copy import copy
 from src.ceinstance.instance_sampler import CEInstanceSampler
+from src.ceinstance.instance_factory import InstanceFactory
 
 class CFsearch:
     def __init__(self, transformer, model, sampler, algorithm="genetic", distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", sparsity_hp=0.2, coherence_hp=0.2, diversity_hp=0.2):
@@ -99,31 +100,60 @@ class GeneticOptimizer():
 
     def one_point_crossover(self, parent1, parent2):
         """Perform one point crossover. TODO: crossover needs feature selection and OOP aaproach"""
-        arr1 = np.array(list(parent1.values()))
-        arr2 = np.array(list(parent2.values()))
-        # choose random pointone_
-        crossover_point = random.randint(1, len(arr1))
-        child1_arr = np.concatenate((arr1[:crossover_point], arr2[crossover_point:]))
-        child2_arr = np.concatenate((arr2[:crossover_point], arr1[crossover_point:]))
-        child1 = {k: v for k, v in zip(self.feature_names, child1_arr)}
-        child2 = {k: v for k, v in zip(self.feature_names, child2_arr)}
+         # Ensure parents are of the same type and have the same schema
+        assert parent1.features.keys() == parent2.features.keys()
+
+        child1 = copy(parent1)
+        child2 = copy(parent2)
+
+        # Get ordered feature names
+        feature_names = list(parent1.features.keys())
+        rand_key = random.choice(feature_names)
+
+        # Swap values after the random key
+        for key in feature_names:
+            if key > rand_key:
+                child1.features[key], child2.features[key] = child2.features[key], child1.features[key]
+        
         return child1, child2
+
 
           
     def mutate(self, instance):
         """Perform mutation"""
-        # choose random feature
-        feature_name = random.choice(self.feature_names)
-        # mutate feature
-        if self.feature_types_dict[feature_name] == "continuous":
-            pass
-            # mutate continuous feature following sampler strategy
-            #instance[feature_name] = random.uniform(self.data.minmax[feature_name][0], self.data.minmax[feature_name][1])
+        # Create a copy of the instance to mutate
+        mutated_instance = copy(instance)
+
+        # Get ordered feature names
+        feature_names = list(instance.features.keys())
+
+        # Select random feature for mutation
+        mutation_key = random.choice(feature_names)
+
+        if mutation_key in self.transformer.continuous_features_transformers:
+            # Apply the mutation function to the selected feature's value
+            original_value = mutated_instance.features[mutation_key].value
+            mutated_instance.features[mutation_key].value = self.cont_mutation_function(original_value)
+        elif mutation_key in self.transformer.categorical_features_transformers:
+            # Apply the mutation function to the selected feature's value
+            original_value = mutated_instance.features[mutation_key].value
+            mutated_instance.features[mutation_key].value = self.cat_mutation_function(original_value)
+
+        return mutated_instance
+    
+    def cont_mutation_function(self, value):
+        """Mutation function for continuous features"""
+        mutation_range = 0.5
+        mutation_value = value + random.uniform(-mutation_range, mutation_range)
+        return mutation_value
+
+    def cat_mutation_function(self, value):
+        """Mutation function for categorical features"""
+        if value == 0:
+            mutation_value = 1
         else:
-            pass
-            # mutate categorical feature following sampler strategy
-            #instance[feature_name] = random.choice(self.data.categorical_features_dict[feature_name])
-        return instance
+            mutation_value = 1 - value
+        return mutation_value
 
     def evaluate_population(self, population, query_instance, desired_output):
         """Evaluate the population by calculating fitness function"""
@@ -171,13 +201,13 @@ class GeneticOptimizer():
         # check if counterfactual instance is valid
         if self.model.model_type == "classification":
             for i in range(len(population)):
-                counterfactual_prediction = self.model.predict(population[i])
+                counterfactual_prediction = self.model.predict_instance(population[i])
                 if counterfactual_prediction != desired_output:
                     return False
             return True
         elif self.model.model_type == "regression":
             for i in range(len(population)):
-                counterfactual_prediction = self.model.predict(population[i])
+                counterfactual_prediction = self.model.predict_instance(population[i])
                 if not desired_output[0] <= counterfactual_prediction <= desired_output[1]:
                     return False
             return True
@@ -238,12 +268,12 @@ class GeneticOptimizer():
                 children[i] = self.mutate(children[i])
             # concatenate children and top individuals
             self.population = top_individuals + children
-            self.population = self.evaluate_population(self.population, desired_output)
-            self.population = self.sort_population(self.population)
-            fitness_history.append(self.population[0]["fitness"])
-            best_candidates_history.append(self.population[0])
-            print("Generation: ", iterations)
-            print("Fitness: ", self.population[0]["fitness"])
+            fitness_list = self.evaluate_population(self.population, query_instance, desired_output)
+            self.sorted_population, sorted_fitness = self.sort_population(self.population, fitness_list)
+            fitness_history.append(sorted_fitness[0])
+            best_candidates_history.append(self.sorted_population[0])
+            print("Parent generation")
+            print("Fitness: ", sorted_fitness[0])
             iterations += 1
 
         self.counterfactuals.append(self.population[:number_cf])

@@ -1,0 +1,7 @@
+{
+    "features": {
+        "Gender": {
+            "type": "immutable"
+        }
+    }
+}

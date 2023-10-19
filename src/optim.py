@@ -31,13 +31,162 @@ class CFsearch:
             self.counterfactuals = optimizer.find_counterfactuals(query_instance, number_cf, desired_class, maxiterations)
         return self.counterfactuals
     
-    def evaluate_counterfactuals(self):
+    def evaluate_counterfactuals(self, original_instance, counterfactual_instance, desired_output):
         # compute validity
         # compute sparsity
-        return
+        # compute coherence
+        self.original_instance = original_instance
+        self.counterfactual_instance = counterfactual_instance
+        distance_continuous = self.distance_counterfactual_continuous(original_instance, counterfactual_instance)
+        distance_categorical = self.distance_counterfactual_categorical(original_instance, counterfactual_instance)
+        sparsity_cont = self.sparsity_continuous(original_instance, counterfactual_instance) 
+        sparsity_cat = self.sparsity_categorical(original_instance, counterfactual_instance)
+        validity = self.check_validity(counterfactual_instance, desired_output)
+        return distance_continuous, distance_categorical, sparsity_cont, sparsity_cat, validity
+    
+    def distance_counterfactual_categorical(self, original_instance, counterfactual_instance):
+        """Calculate distance function for categorical features"""          
+        if self.distance_categorical == "weighted_l1":
+            distance_categorical = 0
+            # apply weights depending if it's categorical or continuous feature weighted with inverse MAD from train data
+            # TODO: add weights for categorical and continious features
+            for feature_name in self.transformer.categorical_features_transformers:
+                distance_categorical += original_instance.features[feature_name].value != counterfactual_instance.features[feature_name].value
+        return distance_categorical
+    
+    def distance_counterfactual_continuous(self, original_instance, counterfactual_instance):
+        """Calculate distance function for continuous features"""
+        if self.distance_continuous == "weighted_l1":
+            distance_continuous = 0
+            # apply weights depending if it's categorical or continuous feature weighted with inverse MAD from train data
+            # TODO: add weights for categorical and continious features
+            for feature_name in self.transformer.continuous_features_transformers:
+                distance_continuous += abs(original_instance.features[feature_name].value - counterfactual_instance.features[feature_name].value)
+            
+        return distance_continuous
+    
+    def sparsity_continuous(self, original_instance, counterfactual_instance):
+        """Calculate sparsity function for continuous features"""
+        sparsity_continuous = 0
+        for feature_name in self.transformer.continuous_features_transformers:
+            if abs(original_instance.features[feature_name].value - counterfactual_instance.features[feature_name].value) > 0:
+                sparsity_continuous += 1
+        return sparsity_continuous
+    
+    def sparsity_categorical(self, original_instance, counterfactual_instance):
+        """Calculate sparsity function for categorical features"""
+        sparsity_categorical = 0
+        for feature_name in self.transformer.categorical_features_transformers:
+            if original_instance.features[feature_name].value != counterfactual_instance.features[feature_name].value:
+                sparsity_categorical += 1
+        return sparsity_categorical
+    
+    def check_validity(self, counterfactual_instance, desired_output):
+        """Check if counterfactual instance is valid"""
+        # check if counterfactual instance is valid
+        if self.model.model_type == "classification":
+            counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
+            if counterfactual_prediction == desired_output:
+                self.new_outcome = counterfactual_prediction
+                return True
+            else:
+                self.new_outcome = counterfactual_prediction
+                return False
+        elif self.model.model_type == "regression":
+            counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
+            if desired_output[0] <= counterfactual_prediction <= desired_output[1]:
+                self.new_outcome = counterfactual_prediction
+                return True
+            else:
+                self.new_outcome = counterfactual_prediction
+                return False
+        else:
+            return False
     
     def visualize_counterfactuals(self):
         return
+    
+    def visualize_as_dataframe(self, display_sparse_df=True, show_only_changes=False):
+        from IPython.display import display
+        import pandas as pd
+
+        # original instance
+        print('Query instance (original outcome : %i)' % round(self.test_pred))
+        display(self.test_instance_df)  # works only in Jupyter notebook
+        self._visualize_internal(display_sparse_df=display_sparse_df,
+                                 show_only_changes=show_only_changes,
+                                 is_notebook_console=True)
+        
+    def _visualize_internal(self, display_sparse_df=True, show_only_changes=False,
+                            is_notebook_console=False):
+        if self.counterfactual_instance is not None and len(self.counterfactual_instance) > 0:
+            if self.posthoc_sparsity_param is None:
+                print('\nCounterfactual set (new outcome: {0})'.format(self.new_outcome))
+                self._dump_output(content=self.counterfactual_instance, show_only_changes=show_only_changes,
+                                  is_notebook_console=is_notebook_console)
+            elif hasattr(self.data_interface, 'data_df') and \
+                    display_sparse_df is True and self.final_cfs_df_sparse is not None:
+                # CFs
+                print('\nDiverse Counterfactual set (new outcome: {0})'.format(self.new_outcome))
+                self._dump_output(content=self.final_cfs_df_sparse, show_only_changes=show_only_changes,
+                                  is_notebook_console=is_notebook_console)
+            elif hasattr(self.data_interface, 'data_df') and \
+                    display_sparse_df is True and self.final_cfs_df_sparse is None:
+                print('\nPlease specify a valid posthoc_sparsity_param to perform sparsity correction.. ',
+                      'displaying Diverse Counterfactual set without sparsity correction (new outcome : %i)' %
+                      (self.new_outcome))
+                self._dump_output(content=self.final_cfs_df, show_only_changes=show_only_changes,
+                                  is_notebook_console=is_notebook_console)
+            elif not hasattr(self.data_interface, 'data_df'):  # for private data
+                print('\nDiverse Counterfactual set without sparsity correction since only metadata about each',
+                      ' feature is available (new outcome: %i)' % (self.new_outcome))
+                self._dump_output(content=self.final_cfs_df, show_only_changes=show_only_changes,
+                                  is_notebook_console=is_notebook_console)
+            else:
+                # CFs
+                print('\nDiverse Counterfactual set without sparsity correction (new outcome: ', self.new_outcome)
+                self._dump_output(content=self.final_cfs_df, show_only_changes=show_only_changes,
+                                  is_notebook_console=is_notebook_console)
+        else:
+            print('\nNo counterfactuals found!')
+
+    def _dump_output(self, content, show_only_changes=False, is_notebook_console=False):
+        import pandas as pd
+        if is_notebook_console:
+            self.display_df(content, show_only_changes=show_only_changes)
+        else:
+            assert isinstance(content, pd.DataFrame), "Expecting a pandas dataframe"
+            self.print_list(content.values.tolist(),
+                            show_only_changes=show_only_changes)
+
+    def print_list(self, li, show_only_changes):
+        if show_only_changes is False:
+            for ix in range(len(li)):
+                print(li[ix])
+        else:
+            newli = copy.deepcopy(li)
+            org = self.test_instance_df.values.tolist()[0]
+            for ix in range(len(newli)):
+                for jx in range(len(newli[ix])):
+                    if newli[ix][jx] == org[jx]:
+                        newli[ix][jx] = '-'
+                print(newli[ix])
+
+    def display_df(self, df, show_only_changes):
+        from IPython.display import display
+        import pandas as pd
+        if show_only_changes is False:
+            display(df)  # works only in Jupyter notebook
+        else:
+            newdf = df.values.tolist()
+            org = self.test_instance_df.values.tolist()[0]
+            for ix in range(df.shape[0]):
+                for jx in range(len(org)):
+                    if newdf[ix][jx] == org[jx]:
+                        newdf[ix][jx] = '-'
+                    else:
+                        newdf[ix][jx] = str(newdf[ix][jx])
+            display(pd.DataFrame(newdf, columns=df.columns, index=df.index))
 
 
 class GeneticOptimizer():
@@ -253,6 +402,7 @@ class GeneticOptimizer():
             if len(fitness_history) > 1 and abs(fitness_history[-2] - fitness_history[-1]) <= t and self.check_prediction_all(self.population[:number_cf], desired_output):
                 stop_count += 1
             if stop_count > 4:
+                self.counterfactuals.append(self.population[:number_cf])
                 break
             # predict and compare to desired output
             # Select 50% of the best individuals, crossover the rest

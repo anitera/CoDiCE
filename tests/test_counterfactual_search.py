@@ -42,7 +42,19 @@ class TestCFSearch(unittest.TestCase):
 
         target_instance = self.instance_factory.create_instance_from_json(target_instance_json)
 
-        counterfacturals = self.search.find_counterfactuals(target_instance, 1, "opposite", 100)
+        counterfacturals = self.search.find_counterfactuals(target_instance, 1, "opposite", 10)
+
+        distance_continuous, distance_categorical, sparsity_cont, sparsity_cat, validity = self.search.evaluate_counterfactuals(target_instance, counterfacturals)
+        # Visualise the values of counterfactuals and original instance
+        print("Distance continuous: ", distance_continuous)
+        print("Distance categorical: ", distance_categorical)
+        print("Sparsity continuous: ", sparsity_cont)
+        print("Sparsity categorical: ", sparsity_cat)
+        print("Validity: ", validity)
+        print("Counterfactuals:")
+        print(counterfacturals.values_dict)
+        print("Original instance:")
+        print(target_instance.values_dict)
 
 if __name__ == "__main__":
     unittest.main()

@@ -44,17 +44,14 @@ class TestCFSearch(unittest.TestCase):
 
         counterfacturals = self.search.find_counterfactuals(target_instance, 1, "opposite", 10)
 
-        distance_continuous, distance_categorical, sparsity_cont, sparsity_cat, validity = self.search.evaluate_counterfactuals(target_instance, counterfacturals)
-        # Visualise the values of counterfactuals and original instance
-        print("Distance continuous: ", distance_continuous)
-        print("Distance categorical: ", distance_categorical)
-        print("Sparsity continuous: ", sparsity_cont)
-        print("Sparsity categorical: ", sparsity_cat)
-        print("Validity: ", validity)
+        self.search.evaluate_counterfactuals(target_instance, counterfacturals)
+        # Visualise the values of counterfactuals and original instance only in jupyter notebook
+        self.search.visualize_as_dataframe(target_instance, counterfacturals)
+        
         print("Counterfactuals:")
-        print(counterfacturals.values_dict)
+        print(counterfacturals[0].get_values_dict())
         print("Original instance:")
-        print(target_instance.values_dict)
+        print(target_instance.get_values_dict())
 
 if __name__ == "__main__":
     unittest.main()

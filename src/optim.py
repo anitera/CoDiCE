@@ -25,23 +25,42 @@ class CFsearch:
 
     
     def find_counterfactuals(self, query_instance, number_cf, desired_class, maxiterations=100):
+        """Find counterfactuals by generating them through genetic algorithm"""
+        self.original_instance = query_instance
+        self.query_instance = query_instance
+        self.transformer.normalize_instance(self.query_instance)
+        original_prediction = self.model.predict_instance(self.query_instance)
+        if desired_class == "opposite" and self.model.model_type == "classification":
+            self.desired_output = 1 - original_prediction
+        elif self.model.model_type == "regression":
+            self.desired_output = [desired_class[0], desired_class[1]]
+        else:
+            self.desired_output = desired_class
         if self.algorithm == "genetic":
             # there might genetic related parameters, like population size, mutation rate etc.
             optimizer = GeneticOptimizer(self.model, self.transformer, self.instance_sampler, self.distance_continuous, self.distance_categorical, self.loss_type, self.hyperparameters, self.diffusion_map, self.mads)
-            self.counterfactuals = optimizer.find_counterfactuals(query_instance, number_cf, desired_class, maxiterations)
+            self.counterfactuals = optimizer.find_counterfactuals(self.query_instance, number_cf, self.desired_output, maxiterations)
         return self.counterfactuals
     
-    def evaluate_counterfactuals(self, original_instance, counterfactual_instance, desired_output):
+    def evaluate_counterfactuals(self, original_instance, counterfactual_instances):
         # compute validity
         # compute sparsity
         # compute coherence
         self.original_instance = original_instance
-        self.counterfactual_instance = counterfactual_instance
-        distance_continuous = self.distance_counterfactual_continuous(original_instance, counterfactual_instance)
-        distance_categorical = self.distance_counterfactual_categorical(original_instance, counterfactual_instance)
-        sparsity_cont = self.sparsity_continuous(original_instance, counterfactual_instance) 
-        sparsity_cat = self.sparsity_categorical(original_instance, counterfactual_instance)
-        validity = self.check_validity(counterfactual_instance, desired_output)
+        self.original_instance_prediciton = self.model.predict_instance(original_instance)
+        self.counterfactual_instances = counterfactual_instances
+        for counterfactual_instance in self.counterfactual_instances:
+            distance_continuous = self.distance_counterfactual_continuous(original_instance, counterfactual_instance)
+            distance_categorical = self.distance_counterfactual_categorical(original_instance, counterfactual_instance)
+            sparsity_cont = self.sparsity_continuous(original_instance, counterfactual_instance) 
+            sparsity_cat = self.sparsity_categorical(original_instance, counterfactual_instance)
+            validity = self.check_validity(counterfactual_instance)
+            print("CF instance: ", counterfactual_instance.get_values_dict())
+            print("Distance continuous: ", distance_continuous)
+            print("Distance categorical: ", distance_categorical)
+            print("Sparsity continuous: ", sparsity_cont)
+            print("Sparsity categorical: ", sparsity_cat)
+            print("Validity: ", validity)
         return distance_continuous, distance_categorical, sparsity_cont, sparsity_cat, validity
     
     def distance_counterfactual_categorical(self, original_instance, counterfactual_instance):
@@ -81,12 +100,12 @@ class CFsearch:
                 sparsity_categorical += 1
         return sparsity_categorical
     
-    def check_validity(self, counterfactual_instance, desired_output):
+    def check_validity(self, counterfactual_instance):
         """Check if counterfactual instance is valid"""
         # check if counterfactual instance is valid
         if self.model.model_type == "classification":
             counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
-            if counterfactual_prediction == desired_output:
+            if counterfactual_prediction == self.desired_output:
                 self.new_outcome = counterfactual_prediction
                 return True
             else:
@@ -94,7 +113,7 @@ class CFsearch:
                 return False
         elif self.model.model_type == "regression":
             counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
-            if desired_output[0] <= counterfactual_prediction <= desired_output[1]:
+            if self.desired_output[0] <= counterfactual_prediction <= self.desired_output[1]:
                 self.new_outcome = counterfactual_prediction
                 return True
             else:
@@ -111,42 +130,16 @@ class CFsearch:
         import pandas as pd
 
         # original instance
-        print('Query instance (original outcome : %i)' % round(self.test_pred))
-        display(self.test_instance_df)  # works only in Jupyter notebook
-        self._visualize_internal(display_sparse_df=display_sparse_df,
-                                 show_only_changes=show_only_changes,
+        print('Query instance (original outcome : %i)' % self.original_instance_prediciton)
+        display(self.query_instance)  # works only in Jupyter notebook
+        self._visualize_internal(show_only_changes=show_only_changes,
                                  is_notebook_console=True)
         
-    def _visualize_internal(self, display_sparse_df=True, show_only_changes=False,
-                            is_notebook_console=False):
-        if self.counterfactual_instance is not None and len(self.counterfactual_instance) > 0:
-            if self.posthoc_sparsity_param is None:
-                print('\nCounterfactual set (new outcome: {0})'.format(self.new_outcome))
-                self._dump_output(content=self.counterfactual_instance, show_only_changes=show_only_changes,
-                                  is_notebook_console=is_notebook_console)
-            elif hasattr(self.data_interface, 'data_df') and \
-                    display_sparse_df is True and self.final_cfs_df_sparse is not None:
-                # CFs
-                print('\nDiverse Counterfactual set (new outcome: {0})'.format(self.new_outcome))
-                self._dump_output(content=self.final_cfs_df_sparse, show_only_changes=show_only_changes,
-                                  is_notebook_console=is_notebook_console)
-            elif hasattr(self.data_interface, 'data_df') and \
-                    display_sparse_df is True and self.final_cfs_df_sparse is None:
-                print('\nPlease specify a valid posthoc_sparsity_param to perform sparsity correction.. ',
-                      'displaying Diverse Counterfactual set without sparsity correction (new outcome : %i)' %
-                      (self.new_outcome))
-                self._dump_output(content=self.final_cfs_df, show_only_changes=show_only_changes,
-                                  is_notebook_console=is_notebook_console)
-            elif not hasattr(self.data_interface, 'data_df'):  # for private data
-                print('\nDiverse Counterfactual set without sparsity correction since only metadata about each',
-                      ' feature is available (new outcome: %i)' % (self.new_outcome))
-                self._dump_output(content=self.final_cfs_df, show_only_changes=show_only_changes,
-                                  is_notebook_console=is_notebook_console)
-            else:
-                # CFs
-                print('\nDiverse Counterfactual set without sparsity correction (new outcome: ', self.new_outcome)
-                self._dump_output(content=self.final_cfs_df, show_only_changes=show_only_changes,
-                                  is_notebook_console=is_notebook_console)
+    def _visualize_internal(self, show_only_changes=False, is_notebook_console=False):
+        if self.counterfactual_instances is not None and len(self.counterfactual_instances) > 0:
+            print('\nCounterfactual set (new outcome: {0})'.format(self.new_outcome)) # if more than 1 cf won't work
+            self._dump_output(content=self.counterfactual_instances, show_only_changes=show_only_changes,
+                                is_notebook_console=is_notebook_console)
         else:
             print('\nNo counterfactuals found!')
 
@@ -178,15 +171,16 @@ class CFsearch:
         if show_only_changes is False:
             display(df)  # works only in Jupyter notebook
         else:
-            newdf = df.values.tolist()
-            org = self.test_instance_df.values.tolist()[0]
-            for ix in range(df.shape[0]):
+            newdf = [cf_instance.get_list_of_features_values() for cf_instance in df]
+            #org = self.test_instance_df.values.tolist()[0]
+            org = self.original_instance.get_list_of_features_values()
+            for ix in range(len(df)):
                 for jx in range(len(org)):
                     if newdf[ix][jx] == org[jx]:
                         newdf[ix][jx] = '-'
                     else:
                         newdf[ix][jx] = str(newdf[ix][jx])
-            display(pd.DataFrame(newdf, columns=df.columns, index=df.index))
+            display(pd.DataFrame(newdf, columns=self.original_instance.get_list_of_features_names()))#, index=df.index))
 
 
 class GeneticOptimizer():
@@ -208,6 +202,8 @@ class GeneticOptimizer():
         if self.loss_type == "hinge_loss":
             original_prediction = self.model.predict_instance(query_instance)
             counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
+            # TODO: take into consideration that predicitons might be not normalized
+            # TODO: add loss function for regression
             loss = max(0, 1 - original_prediction * counterfactual_prediction)
         # calculate distance function depending on distance type
         if self.distance_continuous == "weighted_l1":
@@ -216,6 +212,7 @@ class GeneticOptimizer():
             # TODO: add weights for categorical and continious features
             for feature_name in self.transformer.continuous_features_transformers:
                 distance_continuous += abs(query_instance.features[feature_name].value - counterfactual_instance.features[feature_name].value)
+            distance_continuous = distance_continuous/self.transformer.get_cont_transformers_length()
             
         if self.distance_categorical == "weighted_l1":
             distance_categorical = 0
@@ -223,6 +220,7 @@ class GeneticOptimizer():
             # TODO: add weights for categorical and continious features
             for feature_name in self.transformer.categorical_features_transformers:
                 distance_categorical += query_instance.features[feature_name].value != counterfactual_instance.features[feature_name].value
+            distance_continuous = distance_continuous/self.transformer.get_cat_transformers_length()
         distance = distance_continuous + distance_categorical
         # calculate fitness function
         # TODO: normalize distance and loss
@@ -316,7 +314,7 @@ class GeneticOptimizer():
         """Sort the population by fitness function"""
         # sort population according to fitness list
         paired_population = zip(population, fitness_list)      
-        sorted_population = sorted(paired_population, key=lambda x: x[1], reverse=True)
+        sorted_population = sorted(paired_population, key=lambda x: x[1])
         sorted_population, sorted_fitness_values = zip(*sorted_population)
     
         return list(sorted_population), list(sorted_fitness_values)
@@ -365,7 +363,7 @@ class GeneticOptimizer():
         
     
 
-    def find_counterfactuals(self, query_instance, number_cf, desired_class, maxiterations):
+    def find_counterfactuals(self, query_instance, number_cf, desired_output, maxiterations):
         """Find counterfactuals by generating them through genetic algorithm"""
         # population size might be parameter or depend on number cf required
         population_size = 10*number_cf
@@ -373,14 +371,7 @@ class GeneticOptimizer():
         query_original = copy(query_instance)
         self.transformer.normalize_instance(query_instance)
         # find predictive value of original instance
-        original_prediction = self.model.predict_instance(query_instance)
         # set desired class to be opposite of original instance
-        if desired_class == "opposite" and self.model.model_type == "classification":
-            desired_output = 1 - original_prediction
-        elif self.model.model_type == "regression":
-            desired_output = [desired_class[0], desired_class[1]]
-        else:
-            desired_output = desired_class
 
         self.counterfactuals = []
         iterations = 0
@@ -402,7 +393,6 @@ class GeneticOptimizer():
             if len(fitness_history) > 1 and abs(fitness_history[-2] - fitness_history[-1]) <= t and self.check_prediction_all(self.population[:number_cf], desired_output):
                 stop_count += 1
             if stop_count > 4:
-                self.counterfactuals.append(self.population[:number_cf])
                 break
             # predict and compare to desired output
             # Select 50% of the best individuals, crossover the rest
@@ -426,5 +416,5 @@ class GeneticOptimizer():
             print("Fitness: ", sorted_fitness[0])
             iterations += 1
 
-        self.counterfactuals.append(self.population[:number_cf])
+        self.counterfactuals = self.population[:number_cf]
         return self.counterfactuals

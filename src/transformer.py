@@ -24,6 +24,12 @@ class Transformer(object):
 
     def get_cat_features_transformers(self, dataset, config):
         return {feature_name: FeatureTransformer(dataset, config, feature_name) for feature_name in dataset.categorical_features_list}
+    
+    def get_cont_transformers_length(self):
+        return len(self.continuous_features_transformers)
+    
+    def get_cat_transformers_length(self):
+        return len(self.categorical_features_transformers)
 
     def _get_diffusion_map(self, dataset, config):
         """#TODO"""

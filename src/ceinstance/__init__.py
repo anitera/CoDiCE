@@ -26,6 +26,15 @@ class CEInstance():
 
     def __iter__(self):
         return iter(self.features.values())
+    
+    def get_values_dict(self):
+        return {feature.name: feature.value for feature in self.features.values()}
+    
+    def get_list_of_features_values(self):
+        return list(self.features.values())
+    
+    def get_list_of_features_names(self):
+        return list(self.features.keys())
 
 class InstanceChain(object):
     """

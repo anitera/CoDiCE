@@ -15,6 +15,7 @@ feature_manager:
     normalization: standard #minmax
 
 constraints_file: config/constraints_conf_no.json
+output_folder: results
 
 model:
   model_type: classification

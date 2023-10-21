@@ -5,7 +5,7 @@ import sys
 import json
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.optim import CFsearch
+from src.cfsearch import CFsearch
 
 from src.dataset import Dataset
 from src.explainable_model import ExplainableModel
@@ -47,6 +47,8 @@ class TestCFSearch(unittest.TestCase):
         self.search.evaluate_counterfactuals(target_instance, counterfacturals)
         # Visualise the values of counterfactuals and original instance only in jupyter notebook
         self.search.visualize_as_dataframe(target_instance, counterfacturals)
+        self.search.store_counterfactuals(self.config.get_config_value("output_folder"), "first_test")
+        self.search.store_evaluations(self.config.get_config_value("output_folder"), "first_eval")
         
         print("Counterfactuals:")
         print(counterfacturals[0].get_values_dict())

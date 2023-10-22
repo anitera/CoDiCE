@@ -31,7 +31,7 @@ class CEInstance():
         return {feature.name: feature.value for feature in self.features.values()}
     
     def get_list_of_features_values(self):
-        return list(self.features.values())
+        return [feature.value for feature in self.features.values()] 
     
     def get_list_of_features_names(self):
         return list(self.features.keys())

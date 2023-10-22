@@ -76,11 +76,11 @@ class FeatureTransformer(object):
             raise ValueError("Feature name is not in continuous or categorical features list")
 
     def calculate_statistics(self, dataset):
-        return dataset.data[self.feature_name].agg([min, max, np.mean, np.std, np.median])
+        return dataset.data[self.feature_name].agg(["min", "max", "mean", "std", "median"])
 
     def get_from_dataset(self, dataset):
-        aggregated_values = dataset.data[self.feature_name].agg([min, max])
-        return [aggregated_values['min'], aggregated_values['max']]
+        aggregated_values = dataset.data[self.feature_name].agg(["min", "max"])
+        return [aggregated_values["min"], aggregated_values["max"]]
     
     def get_feature_choice(self, dataset):
         return dataset.data[self.feature_name].unique()

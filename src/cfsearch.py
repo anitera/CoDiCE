@@ -181,7 +181,7 @@ class CFsearch:
 
         # original instance
         print('Query instance (original outcome : %i)' % self.original_instance_prediciton)
-        display(self.query_instance)  # works only in Jupyter notebook
+        display(pd.DataFrame([self.query_instance.get_values_dict()]))  # works only in Jupyter notebook
         self._visualize_internal(show_only_changes=show_only_changes,
                                  is_notebook_console=True)
         

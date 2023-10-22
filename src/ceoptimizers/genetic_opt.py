@@ -203,11 +203,9 @@ class GeneticOptimizer():
         self.sorted_population, sorted_fitness = self.sort_population(self.population, fitness_list)
         fitness_history.append(sorted_fitness[0])
         best_candidates_history.append(self.sorted_population[0])
-        print("Parent generation")
-        print("Fitness: ", sorted_fitness[0])
 
         # until the stopping criteria is reached
-        while iterations < maxiterations or len(self.counterfactuals) < number_cf:
+        while iterations < maxiterations and len(self.counterfactuals) < number_cf:
             # if fitness is not improving for 5 generation break
             if len(fitness_history) > 1 and abs(fitness_history[-2] - fitness_history[-1]) <= t and self.check_prediction_all(self.population[:number_cf], desired_output):
                 stop_count += 1
@@ -231,8 +229,6 @@ class GeneticOptimizer():
             self.sorted_population, sorted_fitness = self.sort_population(self.population, fitness_list)
             fitness_history.append(sorted_fitness[0])
             best_candidates_history.append(self.sorted_population[0])
-            print("Parent generation")
-            print("Fitness: ", sorted_fitness[0])
             iterations += 1
 
         self.counterfactuals = self.population[:number_cf]

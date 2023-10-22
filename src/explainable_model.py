@@ -3,6 +3,8 @@ import pickle
 from joblib import load
 import numpy as np
 from src.ceinstance import CEInstance
+import warnings
+from sklearn.exceptions import DataConversionWarning
 #from tensorflow.keras.models import Model as TFModel
 
 class ExplainableModel:
@@ -122,6 +124,8 @@ class ExplainableModel:
         """
         Predict instance
         """
+        # Suppress specific warning
+        warnings.filterwarnings(action='ignore', category=UserWarning)
         return self.predict(x.to_numpy_array().reshape(1, -1))
         
     def predict_proba_instance(self, x: CEInstance):

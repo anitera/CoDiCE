@@ -35,6 +35,12 @@ class CEInstance():
     
     def get_list_of_features_names(self):
         return list(self.features.keys())
+    
+    def get_numerical_features_values(self):
+        return [feature.value for feature in self.features.values() if feature.ftype == "numerical"]
+    
+    def get_categorical_features_values(self):
+        return [feature.value for feature in self.features.values() if feature.ftype == "categorical"]
 
 class InstanceChain(object):
     """

@@ -131,6 +131,24 @@ class CFsearch:
             # TODO: add weights for categorical and continious features
             for feature_name in self.transformer.continuous_features_transformers:
                 distance_continuous += abs(original_instance.features[feature_name].value - counterfactual_instance.features[feature_name].value)
+        elif self.distance_continuous == "diffusion":
+            from scipy.spatial import distance
+            
+            distance_continuous = 0
+            # Get only continuous features
+            # transform the original point to diffusion space
+            point = original_instance.get_numerical_features_values()
+            point = np.array(point).reshape(1, -1)
+            point_diffusion = self.diffusion_map.transform(point)
+
+            # transform the counterfactual point to diffusion space
+            counterfactual = counterfactual_instance.get_numerical_features_values()
+            counterfactual = np.array(counterfactual).reshape(1, -1)
+            counterfactual_diffusion = self.diffusion_map.transform(counterfactual)
+
+            # Calculate the Euclidean distance between the point and the counterfactuals
+            euc_distance = distance.cdist(point_diffusion, counterfactual_diffusion, 'euclidean')
+            distance_continuous = euc_distance
             
         return distance_continuous
     

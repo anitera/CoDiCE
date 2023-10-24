@@ -4,8 +4,8 @@ class Transformer(object):
     def __init__(self, dataset, config):
         self.continuous_features_transformers = self.get_cont_features_transformers(dataset, config)
         self.categorical_features_transformers = self.get_cat_features_transformers(dataset, config)
-
-        self.diffusion_map = self._get_diffusion_map(dataset, config)
+        if config.get_config_value("search")["continuous_distance"]=="diffusion":
+            self.diffusion_map = self._get_diffusion_map(dataset, kernel_size=2, n_eigenvecs=6)
         self.mads = self._get_mads(dataset, config)
 
     def normalize_instance(self, instance):
@@ -31,9 +31,20 @@ class Transformer(object):
     def get_cat_transformers_length(self):
         return len(self.categorical_features_transformers)
 
-    def _get_diffusion_map(self, dataset, config):
-        """#TODO"""
-        return -1
+    def _get_diffusion_map(self, dataset, kernel_size=6, n_eigenvecs=3):
+        """Calulate diffusion map fo coninuous features with gaussian kernel"""
+        from pydiffmap import diffusion_map
+        from pydiffmap import kernel
+
+        # Get only continuous features
+        shape = dataset.data[dataset.continuous_features_list].to_numpy()
+
+        kernel_gaussian = kernel.Kernel(kernel_type='gaussian', k=kernel_size, neighbor_params={'n_jobs': -1, 'algorithm': 'ball_tree'})
+        diff_map = diffusion_map.DiffusionMap(kernel_gaussian, n_evecs=n_eigenvecs)
+        # Fit the whole data
+        diff_map.fit(shape)
+
+        return diff_map
 
     def _get_mads(self, dataset, ocnfig):
         """#TODO"""
@@ -47,7 +58,7 @@ class FeatureTransformer(object):
         self.feature_name = feature_name
         if self.feature_name in dataset.continuous_features_list:
             self.min, self.max, self.mean, self.std, self.median = self.calculate_statistics(dataset)
-            self.norm_type = config["continuous_features"]["normalization"]
+            self.norm_type = config.get_config_value("model")["continuous_features_normalization"]
             if self.norm_type == "minmax":
                 self.normalize_cont_value = lambda x: (x - self.min) / (self.max - self.min)
                 self.denormalize_cont_value = lambda x: x * (self.max - self.min) + self.min
@@ -59,7 +70,7 @@ class FeatureTransformer(object):
             self.normalized_range = self.get_normalized_range(dataset)
         elif self.feature_name in dataset.categorical_features_list:
             self.original_range = self.get_feature_choice(dataset)
-            self.enc_type = config["categorical_features"]["encoding"] #TODO this could be done better with OOP
+            self.enc_type = config.get_config_value("model")["categorical_features_encoding"] #TODO this could be done better with OOP
             if self.enc_type == "onehot":
                 self.normalize_cat_value = self._onehot_enc
                 self.denormalize_cat_value = self._onehot_dec

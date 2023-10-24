@@ -1,18 +1,9 @@
-spartsity:  0.5
-initialization: random
-
 dataset:
   type: csv # or csv
   path: datasets/homeloan_train.xls
   continuous_features: ['ApplicantIncome','CoapplicantIncome','LoanAmount', 'Loan_Amount_Term', 'Credit_History']
   categorical_features: ['Gender', 'Married', 'Dependents', 'Education', 'Self_Employed', 'Property_Area']
   target: Loan_Status
-
-feature_manager:
-  categorical_features:
-    encoding: onehot # freqhot
-  continuous_features:
-    normalization: standard #minmax
 
 constraints_file: config/constraints_conf_no.json
 output_folder: results
@@ -23,3 +14,15 @@ model:
   state: pretrained
   name: LogisticRegression
   path: models/homeloan_logistic_model.pkl
+  categorical_features_encoding: onehot # 
+  continuous_features_normalization: minmax # standart
+
+search:
+  algorithm: genetic #random
+  loss: hinge
+  continuous_distance: diffusion # l1
+  categorical_distance: hamming # l1
+  sparsity: False # True
+  coherence: False # True
+  search_normalization: False # standart
+  weights: [0.5, 0.5, 0.5] # loss, distance, coherence TODO add sparsity

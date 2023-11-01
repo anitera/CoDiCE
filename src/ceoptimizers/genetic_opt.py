@@ -3,7 +3,7 @@ from copy import copy
 
 # TODO: make Optimizer parent class and implement genetic optimizer as child class
 class GeneticOptimizer():
-    def __init__(self, model, transformer, instance_sampler, distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", hyperparameters=[0.2, 0.2, 0.2], diffusion_map=None, mads=None):
+    def __init__(self, model, transformer, instance_sampler, distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", coherence=False, hyperparameters=[0.2, 0.2, 0.2], diffusion_map=None, mads=None):
         """Initialize data metaparmeters and model"""
         self.model = model
         self.transformer = transformer
@@ -11,6 +11,7 @@ class GeneticOptimizer():
         self.distance_categorical = distance_categorical
         self.loss_type = loss_type
         self.diffusion_map = diffusion_map
+        self.coherence = coherence
         self.mads = mads
         self.hyperparameters = hyperparameters
         self.instance_sampler = instance_sampler
@@ -18,6 +19,7 @@ class GeneticOptimizer():
     def fitness_function(self, counterfactual_instance, query_instance, desired_output):
         """Calculate fitness function which consist of loss function and distance function"""
         # calculate loss function depending on task classification or regression
+        loss = 0
         if self.loss_type == "hinge_loss":
             original_prediction = self.model.predict_instance(query_instance)
             counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
@@ -25,25 +27,29 @@ class GeneticOptimizer():
             # TODO: add loss function for regression
             loss = max(0, 1 - original_prediction * counterfactual_prediction)
         # calculate distance function depending on distance type
-        if self.distance_continuous == "weighted_l1":
-            distance_continuous = 0
+        distance_continuous = 0
+        if self.distance_continuous["type"] == "weighted_l1":
             # apply weights depending if it's categorical or continuous feature weighted with inverse MAD from train data
             # TODO: add weights for categorical and continious features
             for feature_name in self.transformer.continuous_features_transformers:
                 distance_continuous += abs(query_instance.features[feature_name].value - counterfactual_instance.features[feature_name].value)
             distance_continuous = distance_continuous/self.transformer.get_cont_transformers_length()
             
-        if self.distance_categorical == "weighted_l1":
-            distance_categorical = 0
+        distance_categorical = 0
+        if self.distance_categorical == "hamming":
             # apply weights depending if it's categorical or continuous feature weighted with inverse MAD from train data
             # TODO: add weights for categorical and continious features
             for feature_name in self.transformer.categorical_features_transformers:
                 distance_categorical += query_instance.features[feature_name].value != counterfactual_instance.features[feature_name].value
             distance_continuous = distance_continuous/self.transformer.get_cat_transformers_length()
         distance = distance_continuous + distance_categorical
+
+        if self.coherence:
+            coherence = 0
+            # check if changed features are coherent with prediction direciton
         # calculate fitness function
         # TODO: normalize distance and loss
-        fitness = self.hyperparameters[0]*loss + self.hyperparameters[1]*distance
+        fitness = self.hyperparameters[0]*loss + self.hyperparameters[1]*distance + self.hyperparameters[2]*coherence
         return fitness
 
     def generate_population(self, query_instance, population_size):
@@ -188,7 +194,8 @@ class GeneticOptimizer():
         population_size = 10*number_cf
         # prepare data instance to format and transform categorical features
         query_original = copy(query_instance)
-        self.transformer.normalize_instance(query_instance)
+        # Normalization is happening one level above
+        #self.transformer.normalize_instance(query_instance)
         # find predictive value of original instance
         # set desired class to be opposite of original instance
 

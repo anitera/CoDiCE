@@ -1,6 +1,7 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from src.ceinstance import CEInstance
+import numpy as np
 
 class Dataset(object):
     """
@@ -52,7 +53,9 @@ class Dataset(object):
         """
         Check if feature in data is indeed categorical
         """
-        assert (self.data[feature_name].dtype == 'object'), "Feature {} is not categorical".format(feature_name)
+        is_object_dtype = self.data[feature_name].dtype == 'object'
+        is_binary_numeric = self.data[feature_name].nunique() == 2 and self.data[feature_name].dtype in ['float64', 'int64']
+        assert (is_object_dtype or is_binary_numeric), "Feature {} is not categorical".format(feature_name)
 
     def infer_feature_type_from_dataset(self):
         """

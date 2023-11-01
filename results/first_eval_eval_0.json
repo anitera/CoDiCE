@@ -1,0 +1,13 @@
+{
+    "distance_continuous": 20.120539021267003,
+    "distance_categorical": 4,
+    "sparsity_cont": 4,
+    "sparsity_cat": 4,
+    "coherence_score": 0.5454545454545454,
+    "incoherent_features": [
+        "ApplicantIncome",
+        "Self_Employed"
+    ],
+    "validity": true,
+    "new_outcome": 1
+}

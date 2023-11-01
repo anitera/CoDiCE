@@ -126,13 +126,14 @@ class ExplainableModel:
         """
         # Suppress specific warning
         warnings.filterwarnings(action='ignore', category=UserWarning)
-        return self.predict(x.to_numpy_array().reshape(1, -1))
+        return self.predict(x.to_numpy_array().reshape(1, -1))[0]
         
     def predict_proba_instance(self, x: CEInstance):
         """
         Predict instance
         """
-        return self.predict_proba(x.to_numpy_array().reshape(1, -1))
+        warnings.filterwarnings(action='ignore', category=UserWarning)
+        return self.predict_proba(x.to_numpy_array().reshape(1, -1))[0]
     
     def train(self, model_config):
         """

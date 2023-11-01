@@ -1,6 +1,7 @@
 import json
 import numpy as np
 from collections import defaultdict
+from src.cefeature import CEFeatureType
 
 class CEInstance():
     """
@@ -37,10 +38,10 @@ class CEInstance():
         return list(self.features.keys())
     
     def get_numerical_features_values(self):
-        return [feature.value for feature in self.features.values() if feature.ftype == "numerical"]
+        return [feature.value for feature in self.features.values() if feature.ftype == CEFeatureType.NUMERIC]
     
     def get_categorical_features_values(self):
-        return [feature.value for feature in self.features.values() if feature.ftype == "categorical"]
+        return [feature.value for feature in self.features.values() if feature.ftype == CEFeatureType.CATEGORICAL]
 
 class InstanceChain(object):
     """

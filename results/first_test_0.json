@@ -1,0 +1,13 @@
+{
+    "Gender": "Male",
+    "Married": "No",
+    "Dependents": "3+",
+    "Education": "Graduate",
+    "Self_Employed": "Yes",
+    "Property_Area": "Urban",
+    "Credit_History": 0.0,
+    "ApplicantIncome": 41783.78955551395,
+    "CoapplicantIncome": 20290.043966151836,
+    "LoanAmount": 727.1169723218518,
+    "Loan_Amount_Term": 393.1207999824513
+}

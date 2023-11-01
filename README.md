@@ -5,9 +5,9 @@
 
 ## Installation
 To install `trustCE`, use the following pip command:
-\```
+```
 pip install trustCE
-\```
+```
 
 ## Configuration
 
@@ -36,6 +36,7 @@ pip install trustCE
         }
     }
 }
+```
 
 ## General Configuration
 The general configuration can be found in `config/conf.yaml`. This file contains dataset information, model specifications, and settings for the counterfactual search. Here's a brief overview:
@@ -56,7 +57,7 @@ To provide an instance for explanation, fill out the `datasets/instance.json` fi
     ...
     "Property_Area": "Urban"
 }
-
+```
 
 ## Running the Framework
 You can run the framework using the following steps:
@@ -106,18 +107,9 @@ Here's an example of the evaluation output:
     "validity": true,
     "new_outcome": 1
 }
+```
+
 These metrics provide a deeper understanding of the counterfactuals and their quality, aiding users in interpreting and trusting the generated explanations.
-
-yaml
-Copy code
-
----
-
-You can incorporate the above section into your `README.md` to provide users with insights into the evaluation capabilities of your framework. Adjust the content as needed to ensure accuracy and clarity.
-
-
-
-
 
 
 ## Contribution

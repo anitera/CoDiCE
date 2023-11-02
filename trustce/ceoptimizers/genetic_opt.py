@@ -109,7 +109,7 @@ class GeneticOptimizer():
         elif mutation_key in self.transformer.categorical_features_transformers:
             # Apply the mutation function to the selected feature's value
             original_value = mutated_instance.features[mutation_key].value
-            mutated_instance.features[mutation_key].value = self.cat_mutation_function(original_value)
+            mutated_instance.features[mutation_key].value = self.cat_mutation_function(original_value, mutation_key)
 
         return mutated_instance
     
@@ -119,12 +119,15 @@ class GeneticOptimizer():
         mutation_value = value + random.uniform(-mutation_range, mutation_range)
         return mutation_value
 
-    def cat_mutation_function(self, value):
+    def cat_mutation_function(self, fvalue, fname):
         """Mutation function for categorical features"""
-        if value == 0:
-            mutation_value = 1
-        else:
-            mutation_value = 1 - value
+        range = self.transformer.categorical_features_transformers[fname].normalized_range
+        # random choice from frange excluding current value
+        while True:
+            mutation_value = random.randint(range[0], range[1])
+            if mutation_value != fvalue:
+                break
+
         return mutation_value
 
     def evaluate_population(self, population, query_instance, desired_output):

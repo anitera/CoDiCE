@@ -23,14 +23,14 @@ cfsearch:
   continuous_distance:
     type: weighted_l1 #diffusion # weighted_l1?
     diffusion_params:
-      kernel_size: 1  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
-      number_of_eigenvectors: 25 # how many dimensions or features of the diffusion space you want to consider
+      kernel_size: 2  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
+      number_of_eigenvectors: 50 # how many dimensions or features of the diffusion space you want to consider
     weighted_l1_params:
       weights: [1, 1, 1, 1]
   categorical_distance: hamming # l1
   sparsity: False # True
   coherence: True # False # True
-  search_normalization: False # standart
+  search_normalization: False # standard
   search_encoding: False # frequency
   objective_function_weights: [0.5, 0.5, 0.5] # loss, distance, coherence TODO add sparsity
   feature_weights: False

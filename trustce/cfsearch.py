@@ -346,6 +346,8 @@ class CFsearch:
 
         # original instance
         print('Query instance (original outcome : %i)' % self.original_instance_prediciton)
+        if self.query_instance.normalized:
+            self.transformer.denormalize_instance(self.query_instance)
         display(pd.DataFrame([self.query_instance.get_values_dict()]))  # works only in Jupyter notebook
         self._visualize_internal(show_only_changes=show_only_changes,
                                  is_notebook_console=True)
@@ -389,21 +391,22 @@ class CFsearch:
             display(df)  # works only in Jupyter notebook
         else:
             if df[0].normalized:
-                newdf = [self.transformer.denormalize_instance(cf_instance).get_list_of_features_values() for cf_instance in df]
+                newdf = []
+                for cf_instance in df:
+                    self.transformer.denormalize_instance(cf_instance)
+                    get_list_of_features_values = cf_instance.get_list_of_features_values()
+                    newdf.append(get_list_of_features_values)
+                #newdf = [self.transformer.denormalize_instance(cf_instance).get_list_of_features_values() for cf_instance in df]
             else:
                 newdf = [cf_instance.get_list_of_features_values() for cf_instance in df]
             #org = self.test_instance_df.values.tolist()[0]
             if self.original_instance.normalized:
-                org = self.transformer.denormalize_instance(self.original_instance).get_list_of_features_values()
-            else:
-                org = self.original_instance.get_list_of_features_values()
+                self.transformer.denormalize_instance(self.original_instance) 
+            org = self.original_instance.get_list_of_features_values()
             for ix in range(len(df)):
                 for jx in range(len(org)):
                     if newdf[ix][jx] == org[jx]:
                         newdf[ix][jx] = '-'
                     else:
                         newdf[ix][jx] = str(newdf[ix][jx])
-            if self.original_instance.normalized:
-                display(pd.DataFrame(newdf, columns=self.transformer.denormalize_instance(self.original_instance).get_list_of_features_names()))#, index=df.index))
-            else:
-                display(pd.DataFrame(newdf, columns=self.original_instance.get_list_of_features_names()))#, index=df.index))
+            display(pd.DataFrame(newdf, columns=self.original_instance.get_list_of_features_names()))#, index=df.index))

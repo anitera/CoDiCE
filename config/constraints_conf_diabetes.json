@@ -1,21 +1,7 @@
 {
     "features": {
-        "ApplicantIncome": {
-            "type": "monotonic",
-            "direction": "increasing"  
-        },
-        "CoapplicantIncome": {
-            "type": "monotonic",
-            "direction": "decreasing"  
-        },
-        "Gender": {
-            "type": "immutable"
-        },
-        "Credit_History": {
-            "type": "dependency",
-            "dependencyType": "causal",
-            "root": "Credit_History",
-            "child": "ApplicantIncome"
+        "Number of times pregnant": {
+            "type": "immutable"  
         }
     }
 }

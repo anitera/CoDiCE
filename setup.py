@@ -6,8 +6,8 @@ setup(
     packages=find_packages(),
     package_data={
         "trustce": ["input_instance/*.json", "config/*.yaml", "config/*.json", "examples_notebooks_demos/*.ipynb", "models/*.pkl", "models/*.pth"]
-    }
-    data_files=[("", ["LICENSE", 'README.md'])]
+    },
+    data_files=[("", ["LICENSE", 'README.md'])],
     install_requires=[
         "numpy==1.26.1",
         "pandas==2.1.1",

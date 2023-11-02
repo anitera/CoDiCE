@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from src.cfsearch import CFsearch
 
 from src.dataset import Dataset
+from src import load_datasets
 from src.explainable_model import ExplainableModel
 
 from src.ceinstance.instance_sampler import CEInstanceSampler
@@ -24,10 +25,11 @@ class TestCFSearch(unittest.TestCase):
             self.constraints = json.load(file)
         print(self.config)
 
-        self.target_instance_json = "datasets/instance.json"
+        self.target_instance_json = "input_instance/instance.json"
         
 
     def test_cf_search(self):
+        load_datasets.download("homeloan")
         self.data = Dataset(self.config.get_config_value("dataset"), "Loan_Status")
         self.normalization_transformer = Transformer(self.data, self.config)
         self.instance_factory = InstanceFactory(self.data)

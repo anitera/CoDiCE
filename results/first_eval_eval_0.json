@@ -1,13 +1,14 @@
 {
-    "distance_continuous": 20.120539021267003,
-    "distance_categorical": 4,
+    "distance_continuous": 14.539561487596801,
+    "distance_categorical": 3,
     "sparsity_cont": 4,
-    "sparsity_cat": 4,
-    "coherence_score": 0.5454545454545454,
+    "sparsity_cat": 3,
+    "coherence_score": 0.36363636363636365,
     "incoherent_features": [
         "ApplicantIncome",
-        "Self_Employed"
+        "Dependents",
+        "Property_Area"
     ],
-    "validity": true,
-    "new_outcome": 1
+    "validity": false,
+    "new_outcome": 0
 }

@@ -10,9 +10,10 @@ setup(
         "scikit-learn==1.3.1",
         "scipy==1.11.3",
         "pydiffmap==0.2.0.1",
-        "Pillow==10.0.1".
+        "Pillow==10.0.1",
         "PyYAML==6.0.1",
-    ]
+        "requests==2.31.0",
+    ],
     extras_require={
         "dev": [
             "pytest>=3.4.3",
@@ -21,6 +22,9 @@ setup(
         "sklearn": ["scikit-learn>=0.24.1"],
         "tensorflow": ["tensorflow>=2.4.1"],
         "pytorch": ["torch>=1.8.1"],
-        "gpgomea": ["gpgomea>=0.1.0"]
-    },
+        "gpgomea": ["gpgomea>=0.1.0"],
+        "homeloan": [],
+        "diabetes": [],
+        "income": []
+    }
 )

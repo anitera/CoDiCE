@@ -1,0 +1,13 @@
+{
+    "Gender": "Female",
+    "Married": "No",
+    "Dependents": "0",
+    "Education": "Graduate",
+    "Self_Employed": "No",
+    "ApplicantIncome": 3510,
+    "CoapplicantIncome": 0.0,
+    "LoanAmount": 76.0,
+    "Loan_Amount_Term": 360,
+    "Credit_History": 0,
+    "Property_Area": "Urban"
+}

@@ -16,6 +16,12 @@
             "dependencyType": "causal",
             "root": "Credit_History",
             "child": "ApplicantIncome"
+        },
+        "LoanAmount": {
+            "type": "dependency",
+            "dependencyType": "monotonic_dependency",
+            "root": "LoanAmount",
+            "child": "Loan_Amount_Term"
         }
     }
 }

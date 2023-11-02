@@ -1,0 +1,36 @@
+dataset:
+  type: csv # or csv
+  path: datasets/diabetes_train.xls
+  continuous_features: ['Number of times pregnant','Plasma glucose concentration a 2 hours in an oral glucose tolerance test','Diastolic blood pressure (mm Hg)','Triceps skin fold thickness (mm)','2-Hour serum insulin (mu U/ml)','Body mass index (weight in kg/(height in m)^2)','Diabetes pedigree function','Age (years)']
+  categorical_features: []
+  target: "Class variable"
+
+constraints_file: config/constraints_conf_diabetes.json
+output_folder: results
+
+model:
+  model_type: classification
+  model_backend: sklearn
+  state: pretrained
+  name: LogisticRegression
+  path: models/logistic_model_diabetes.pkl
+  categorical_features_encoding: label_encoder # onehot # frequency
+  continuous_features_normalization: standard # minmax # standard
+
+cfsearch:
+  optimizer: genetic #random #CPLEX
+  loss_type: hinge
+  continuous_distance:
+    type: weighted_l1 #diffusion # weighted_l1?
+    diffusion_params:
+      kernel_size: 1  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
+      number_of_eigenvectors: 25 # how many dimensions or features of the diffusion space you want to consider
+    weighted_l1_params:
+      weights: [1, 1, 1, 1]
+  categorical_distance: hamming # l1
+  sparsity: False # True
+  coherence: True # False # True
+  search_normalization: False # standart
+  search_encoding: False # frequency
+  objective_function_weights: [0.5, 0.5, 0.5] # loss, distance, coherence TODO add sparsity
+  feature_weights: False

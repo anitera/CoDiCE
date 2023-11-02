@@ -6,11 +6,11 @@
 ## Installation
 To install `trustCE`, use the following pip command:
 ```
-pip install trustCE
+pip install trustce
 ```
 It is possible to enable different model supports and pre download test datasets. FOr example to enable `dev` version with `sklearn` and the `homeloan` dataset, use the following pip command:
 ```
-pip install trustCE[dev,sklearn,homeloan]
+pip install trustce[dev,sklearn,homeloan]
 ```
 
 ## Configuration

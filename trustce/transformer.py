@@ -15,6 +15,7 @@ class Transformer(object):
 
     def normalize_instance(self, instance):
         """Return normalize instance"""
+        instance.normalized = True
         for feature_name, feature in instance.features.items():
             if feature_name in self.continuous_features_transformers:
                 feature.value = self.continuous_features_transformers[feature_name].normalize_cont_value(feature.value) #TODO check for over-assignment
@@ -38,6 +39,7 @@ class Transformer(object):
     
     def denormalize_instance(self, instance):
         """Return denormalized instance"""
+        instance.normalized = False
         for feature_name, feature in instance.features.items():
             if feature_name in self.continuous_features_transformers:
                 feature.value = self.continuous_features_transformers[feature_name].denormalize_cont_value(feature.value) #TODO check for over-assignment
@@ -239,8 +241,8 @@ class FeatureTransformer(object):
         return decoded_value[0][0]  # Return the first (and only) value of the decoded result
     
     def _label_enc(self, value):
-        print("Label encoder: ", value, " for feature ", self.feature_name)
         transformed_value = self.label_encoder.transform([value])[0]
+        print("Label encoder: ", value, " for feature ", self.feature_name, " is transformed into ", transformed_value)
         return transformed_value
     
     def _label_dec(self, value):

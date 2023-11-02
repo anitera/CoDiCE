@@ -7,7 +7,7 @@ import os
 # Add the source directory to the Python path
 #sys.path.insert(0, source_dir)
 
-from src.train import get_transformations, train_model, load_dataset, split_dataset
+from trustce.train import get_transformations, train_model, load_dataset, split_dataset
 
 if __name__ == "__main__":
      # Load dataset

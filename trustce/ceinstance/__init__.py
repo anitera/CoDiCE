@@ -17,6 +17,7 @@ class CEInstance():
 
     def __init__(self, instance_schema, values_dict=None) -> None:
         self.features = defaultdict()
+        self.normalized = True
         if values_dict is not None:
             for fname, ftype in instance_schema.items():
                 self.features[fname] = ftype(fname, values_dict.get(fname, ftype.default_value)) 

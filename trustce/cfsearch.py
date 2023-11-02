@@ -33,7 +33,8 @@ class CFsearch:
         number_cf = len(self.counterfactuals)
         # Unnormalize counterfactuals
         for i in range(number_cf):
-            self.transformer.denormalize_instance(self.counterfactuals[i])
+            if self.counterfactuals[i].normalized:
+                self.transformer.denormalize_instance(self.counterfactuals[i])
     
         # making filenames for every counterfactual
         for i in range(number_cf):
@@ -106,6 +107,8 @@ class CFsearch:
         self.original_instance_prediciton = self.model.predict_instance(original_instance)
         self.counterfactual_instances = counterfactual_instances
         for counterfactual_instance in self.counterfactual_instances:
+            if not counterfactual_instance.normalized:
+                counterfactual_instance = self.transformer.normalize_instance(counterfactual_instance)
             distance_continuous = self.distance_counterfactual_continuous(original_instance, counterfactual_instance)
             distance_categorical = self.distance_counterfactual_categorical(original_instance, counterfactual_instance)
             sparsity_cont = self.sparsity_continuous(original_instance, counterfactual_instance) 
@@ -380,16 +383,27 @@ class CFsearch:
     def display_df(self, df, show_only_changes):
         from IPython.display import display
         import pandas as pd
+        # We need to display denormalized feature
+    
         if show_only_changes is False:
             display(df)  # works only in Jupyter notebook
         else:
-            newdf = [cf_instance.get_list_of_features_values() for cf_instance in df]
+            if df[0].normalized:
+                newdf = [self.transformer.denormalize_instance(cf_instance).get_list_of_features_values() for cf_instance in df]
+            else:
+                newdf = [cf_instance.get_list_of_features_values() for cf_instance in df]
             #org = self.test_instance_df.values.tolist()[0]
-            org = self.original_instance.get_list_of_features_values()
+            if self.original_instance.normalized:
+                org = self.transformer.denormalize_instance(self.original_instance).get_list_of_features_values()
+            else:
+                org = self.original_instance.get_list_of_features_values()
             for ix in range(len(df)):
                 for jx in range(len(org)):
                     if newdf[ix][jx] == org[jx]:
                         newdf[ix][jx] = '-'
                     else:
                         newdf[ix][jx] = str(newdf[ix][jx])
-            display(pd.DataFrame(newdf, columns=self.original_instance.get_list_of_features_names()))#, index=df.index))
+            if self.original_instance.normalized:
+                display(pd.DataFrame(newdf, columns=self.transformer.denormalize_instance(self.original_instance).get_list_of_features_names()))#, index=df.index))
+            else:
+                display(pd.DataFrame(newdf, columns=self.original_instance.get_list_of_features_names()))#, index=df.index))

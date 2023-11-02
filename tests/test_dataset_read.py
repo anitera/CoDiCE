@@ -4,8 +4,8 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.dataset import Dataset
-from src.config import Config
+from trustce.dataset import Dataset
+from trustce.config import Config
 
 class TestDataset(unittest.TestCase):
     def setUp(self):

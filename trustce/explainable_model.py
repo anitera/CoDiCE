@@ -2,7 +2,7 @@ from sklearn.base import BaseEstimator
 import pickle
 from joblib import load
 import numpy as np
-from src.ceinstance import CEInstance
+from trustce.ceinstance import CEInstance
 import warnings
 from sklearn.exceptions import DataConversionWarning
 #from tensorflow.keras.models import Model as TFModel

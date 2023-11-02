@@ -5,16 +5,16 @@ import sys
 import json
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.cfsearch import CFsearch
+from trustce.cfsearch import CFsearch
 
-from src.dataset import Dataset
-from src import load_datasets
-from src.explainable_model import ExplainableModel
+from trustce.dataset import Dataset
+from trustce import load_datasets
+from trustce.explainable_model import ExplainableModel
 
-from src.ceinstance.instance_sampler import CEInstanceSampler
-from src.config import Config
-from src.transformer import Transformer
-from src.ceinstance.instance_factory import InstanceFactory
+from trustce.ceinstance.instance_sampler import CEInstanceSampler
+from trustce.config import Config
+from trustce.transformer import Transformer
+from trustce.ceinstance.instance_factory import InstanceFactory
 
 
 class TestCFSearch(unittest.TestCase):
@@ -58,12 +58,7 @@ class TestCFSearch(unittest.TestCase):
         # Visualise the values of counterfactuals and original instance only in jupyter notebook
         self.search.visualize_as_dataframe(target_instance, counterfacturals)
         self.search.store_counterfactuals(self.config.get_config_value("output_folder"), "first_test")
-        self.search.store_evaluations(self.config.get_config_value("output_folder"), "first_eval")
-        
-        print("Counterfactuals:")
-        print(counterfacturals[0].get_values_dict())
-        print("Original instance:")
-        print(target_instance.get_values_dict())
+        self.search.store_evaluations(self.config.get_config_value("output_folder"), "first_eval")      
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,7 +2,7 @@ import numpy as np
 import copy
 import os
 import json
-from src.ceoptimizers.genetic_opt import GeneticOptimizer
+from trustce.ceoptimizers.genetic_opt import GeneticOptimizer
 
 
 class CFsearch:

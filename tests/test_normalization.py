@@ -5,15 +5,15 @@ import sys
 import json
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.cfsearch import CFsearch
+from trustce.cfsearch import CFsearch
 
-from src.dataset import Dataset
-from src.explainable_model import ExplainableModel
+from trustce.dataset import Dataset
+from trustce.explainable_model import ExplainableModel
 
-from src.ceinstance.instance_sampler import CEInstanceSampler
-from src.config import Config
-from src.transformer import Transformer
-from src.ceinstance.instance_factory import InstanceFactory
+from trustce.ceinstance.instance_sampler import CEInstanceSampler
+from trustce.config import Config
+from trustce.transformer import Transformer
+from trustce.ceinstance.instance_factory import InstanceFactory
 
 
 class TestCFSearch(unittest.TestCase):

@@ -34,6 +34,18 @@ Install the framework:
 pip install trustce
 ```
 
+# Running example notebooks
+If you want to use local jupyter notebook run the following commands:
+```
+conda install -c anaconda ipykernel
+python -m ipykernel install --user --name=demo_trustce
+pip install jupyter
+```
+After that type in the root folder:
+```
+jupyter notebook
+```
+
 
 ## Contribution
 We welcome contributions to `trustCE`! If you'd like to contribute, please fork the repository and submit a pull request. For major changes or feature requests, please open an issue first to discuss your ideas.

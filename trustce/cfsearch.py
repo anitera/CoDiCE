@@ -2,16 +2,16 @@ import numpy as np
 import copy
 import os
 import json
-from trustce.ceoptimizers.genetic_opt import GeneticOptimizer
+from trustce.ceoptimizers.optimizer_interface import OptimizerInterface, OptimizerFactory
 
 
 class CFsearch:
-    def __init__(self, transformer, model, sampler, config, algorithm="genetic", distance_continuous="weighted_l1", 
+    def __init__(self, transformer, model, sampler, config, optimizer_name="genetic", distance_continuous="weighted_l1", 
                  distance_categorical="weighted_l1", loss_type="hinge_loss", coherence=False,
                  objective_function_weights = [0.5, 0.5, 0.5]):
         self.transformer = transformer
         self.model = model
-        self.algorithm = algorithm
+        self.optimizer_name = optimizer_name
         self.config = config
         self.distance_continuous = distance_continuous
         self.distance_categorical = distance_categorical
@@ -23,6 +23,14 @@ class CFsearch:
         # TODO make instance sampler parameter, louse coupling config per class, instance sampler should be outside
         self.instance_sampler = sampler # give as parameter instance_sampler
         self.objective_initialization()
+        self.initialize_optimizer()
+
+    def initialize_optimizer(self):
+        """
+        Initialize optimizer using OptimizerFactory
+        """
+        self.optimizer = OptimizerFactory.get_optimizer(self.optimizer_name, self.model, self.transformer, self.instance_sampler, self.distance_continuous, self.distance_categorical, self.loss_type, self.coherence, self.objective_function_weights, self.diffusion_map, self.mads)
+        return
 
     def store_counterfactuals(self, output_folder, indexname):
         """Store counterfactuals in json file. TODO unnormaliza data"""
@@ -81,7 +89,7 @@ class CFsearch:
 
     
     def find_counterfactuals(self, query_instance, number_cf, desired_class, maxiterations=100):
-        """Find counterfactuals by generating them through genetic algorithm"""
+        """Find counterfactuals by generating them through genetic optimizer"""
         self.original_instance = query_instance
         self.query_instance = query_instance
         self.transformer.normalize_instance(self.query_instance)
@@ -92,10 +100,8 @@ class CFsearch:
             self.desired_output = [desired_class[0], desired_class[1]]
         else:
             self.desired_output = desired_class
-        if self.algorithm == "genetic":
-            # there might genetic related parameters, like population size, mutation rate etc.
-            optimizer = GeneticOptimizer(self.model, self.transformer, self.instance_sampler, self.distance_continuous, self.distance_categorical, self.loss_type, self.coherence, self.objective_function_weights, self.diffusion_map, self.mads)
-            self.counterfactuals = optimizer.find_counterfactuals(self.query_instance, number_cf, self.desired_output, maxiterations)
+        
+        self.counterfactuals = self.optimizer.find_counterfactuals(self.query_instance, number_cf, self.desired_output, maxiterations)
         return self.counterfactuals
     
     def evaluate_counterfactuals(self, original_instance, counterfactual_instances):
@@ -149,7 +155,7 @@ class CFsearch:
             # apply weights depending if it's categorical or continuous feature weighted with inverse MAD from train data
             # TODO: add weights for categorical and continious features
             for feature_name in self.transformer.continuous_features_transformers:
-                distance_continuous += abs(original_instance.features[feature_name].value - counterfactual_instance.features[feature_name].value)
+                distance_continuous += abs(original_instance.features[feature_name].value - counterfactual_instance.features[feature_name].value)/self.mads[feature_name]
         elif self.distance_continuous["type"] == "diffusion":
             from scipy.spatial import distance
 

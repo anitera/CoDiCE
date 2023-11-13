@@ -11,7 +11,7 @@ class Transformer(object):
         if config.get_config_value("cfsearch")["continuous_distance"]["type"]=="diffusion":
             self.diffusion_map = self._get_diffusion_map(dataset, kernel_size=config.get_config_value("cfsearch")["continuous_distance"]["diffusion_params"]["kernel_size"], 
                                                          n_eigenvecs=config.get_config_value("cfsearch")["continuous_distance"]["diffusion_params"]["number_of_eigenvectors"])
-        self.mads = self._get_mads(dataset, config)
+        self.mads = self._get_mads(dataset)
 
     def normalize_instance(self, instance):
         """Return normalize instance"""
@@ -94,9 +94,23 @@ class Transformer(object):
 
         return diff_map
 
-    def _get_mads(self, dataset, ocnfig):
-        """#TODO"""
-        return -1
+    def custom_diff_map(self, dataset, kernel_size=6, n_neighbors=6, n_eigenvecs=3):
+        """Calculate diffusion map for continous features with number of neighbors as parameter"""
+        pass
+
+
+    def _get_mads(self, dataset):
+        """Computes Median Absolute Deviation of features."""
+        mads = {}
+        # For all continuous gfeatures
+        for feature in self.continuous_features_transformers:
+            mads[feature] = np.median(abs(dataset.data[feature].values - np.median(dataset.data[feature].values)))
+            if mads[feature] <= 0:
+                mads[feature] = 1.0
+                #if display_warnings:
+                print(" MAD for feature %s is 0, so replacing it with 1.0 to avoid error.", feature)
+        return mads
+
 
 class FeatureTransformer(object):
     """

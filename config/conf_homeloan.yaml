@@ -14,14 +14,14 @@ model:
   state: pretrained
   name: LogisticRegression
   path: models/homeloan_logistic_model.pkl
-  categorical_features_encoding: label_encoder # onehot # frequency
-  continuous_features_normalization: standard # minmax # standard
+  categorical_features_encoding: label_encoder # Possible values: [onehot, label_encoder, frequency]
+  continuous_features_normalization: standard # Possible values: [minmax, standard]
 
 cfsearch:
-  optimizer: genetic #random #CPLEX
+  optimizer: genetic # Possible values: [random, CPLEX, genetic], currently supported genetic
   loss_type: hinge
   continuous_distance:
-    type: weighted_l1 #diffusion # weighted_l1?
+    type: weighted_l1 # Possible values: [weighted_l1, diffusion]
     diffusion_params:
       kernel_size: 2  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
       number_of_eigenvectors: 50 # how many dimensions or features of the diffusion space you want to consider

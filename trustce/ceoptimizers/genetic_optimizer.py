@@ -32,9 +32,11 @@ class GeneticOptimizer():
             # apply weights depending if it's categorical or continuous feature weighted with inverse MAD from train data
             # TODO: add weights for categorical and continious features
             for feature_name in self.transformer.continuous_features_transformers:
-                distance_continuous += abs(query_instance.features[feature_name].value - counterfactual_instance.features[feature_name].value)
+                distance_continuous += abs(query_instance.features[feature_name].value - counterfactual_instance.features[feature_name].value)/self.mads[feature_name]
             if len(self.transformer.continuous_features_transformers) > 0:
                 distance_continuous = distance_continuous/self.transformer.get_cont_transformers_length()
+        elif self.distance_continuous["type"] == "diffusion_map":
+            pass
 
         distance_categorical = 0
         if self.distance_categorical == "hamming":

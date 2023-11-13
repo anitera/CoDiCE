@@ -20,7 +20,7 @@ from trustce.ceinstance.instance_factory import InstanceFactory
 class TestCFSearch(unittest.TestCase):
     def setUp(self):
         # read config yml file from config folder
-        self.config = Config("config/conf.yaml")
+        self.config = Config("config/conf_homeloan.yaml")
         with open("config/constraints_conf.json", 'r') as file:
             self.constraints = json.load(file)
         print(self.config)
@@ -39,7 +39,7 @@ class TestCFSearch(unittest.TestCase):
         config_for_cfsearch = self.config.get_config_value("cfsearch")
         self.search = CFsearch(self.normalization_transformer, self.model, self.sampler, 
                                config=self.config,
-                               algorithm=config_for_cfsearch["optimizer"], 
+                               optimizer_name=config_for_cfsearch["optimizer"], 
                                distance_continuous=config_for_cfsearch["continuous_distance"], 
                                distance_categorical=config_for_cfsearch["categorical_distance"], 
                                loss_type=config_for_cfsearch["loss_type"], 

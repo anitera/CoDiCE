@@ -164,3 +164,6 @@ research_experiments/
 
 # Ignore datasets floder
 datasets/
+
+# Ignore results experimens
+results/

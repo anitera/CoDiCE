@@ -33,7 +33,10 @@ class TestCFSearch(unittest.TestCase):
         self.data = Dataset(self.config.get_config_value("dataset"), "Loan_Status")
         self.normalization_transformer = Transformer(self.data, self.config)
         self.instance_factory = InstanceFactory(self.data)
-        self.sampler = CEInstanceSampler(self.config, self.normalization_transformer, self.instance_factory)
+
+        custom_rules = {"coapplicantRule": sample_rule_based_functions}
+
+        self.sampler = CEInstanceSampler(self.config, self.normalization_transformer, self.instance_factory, custom_rules=custom_rules)
 
         self.model = SklearnModel(self.config.get_config_value("model"))
         config_for_cfsearch = self.config.get_config_value("cfsearch")
@@ -59,6 +62,10 @@ class TestCFSearch(unittest.TestCase):
         self.search.visualize_as_dataframe(target_instance, counterfacturals)
         self.search.store_counterfactuals(self.config.get_config_value("output_folder"), "first_test")
         self.search.store_evaluations(self.config.get_config_value("output_folder"), "first_eval")      
+
+
+def sample_rule_based_functions(target_val):
+    return target_val+3
 
 if __name__ == "__main__":
     unittest.main()

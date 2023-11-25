@@ -8,13 +8,19 @@ import inspect
 import logging
 
 class CEInstanceSampler(object):
-    def __init__(self, config, transformers, instance_factory, normalization=True):
+    def __init__(self, config, transformers, instance_factory, normalization=True, custom_rules=None):
         self.config = config
         self.transformers = transformers
         self.normalization = normalization
         # initialize dictionary of feature_samples with ICEFeatureSampler
         self.feature_samplers = OrderedDict()
         self.instance_factory = instance_factory
+        if custom_rules is not None:
+            if not isinstance(custom_rules, dict):
+                raise ValueError("Custom rules must be a dictionary")
+            else:
+                self.custom_rules = custom_rules
+
         self.constraints = self.read_constraints(config)     
 
     def read_constraints(self, config):
@@ -45,10 +51,15 @@ class CEInstanceSampler(object):
                     except KeyError:
                         raise ValueError(f"Sampler {child_feature} not found")
                 elif constraint['dependencyType'] == 'monotonic_dependency':
-                    child_sampler = MonotonicSampler(child_feature, child_range, 0)
+                    child_sampler = MonotonicSampler(child_feature, child_range, "increasing")
                 elif constraint['dependencyType'] == 'rule':
                     print(f"Rule: {constraint['rule']}")
-                    child_sampler = RuleSampler(child_feature, child_range, constraint['rule'])
+                    try:
+                        rule_function = self.custom_rules[constraint['rule']]
+                    except KeyError:
+                        raise ValueError(f"Rule {constraint['rule']} not found")
+
+                    child_sampler = RuleSampler(child_feature, child_range, rule_function)
                 else:
                     raise ValueError(f"Dependency type {constraint['dependencyType']} not supported")
 

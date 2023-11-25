@@ -5,7 +5,7 @@ dataset:
   categorical_features: ['Gender', 'Married', 'Dependents', 'Education', 'Self_Employed', 'Property_Area', 'Credit_History']
   target: Loan_Status
 
-constraints_file: config/constraints_conf_no.json
+constraints_file: config/constraints_conf.json
 output_folder: results
 
 model:

@@ -1,21 +1,14 @@
 {
     "features": {
         "ApplicantIncome": {
-            "type": "monotonic",
-            "direction": "increasing"  
-        },
-        "CoapplicantIncome": {
-            "type": "monotonic",
-            "direction": "decreasing"  
+            "type": "dependency",
+            "dependencyType": "rule",
+            "root": "ApplicantIncome",
+            "child": "CoapplicantIncome",
+            "rule": "coapplicantRule"
         },
         "Gender": {
             "type": "immutable"
-        },
-        "Credit_History": {
-            "type": "dependency",
-            "dependencyType": "causal",
-            "root": "Credit_History",
-            "child": "ApplicantIncome"
         },
         "LoanAmount": {
             "type": "dependency",

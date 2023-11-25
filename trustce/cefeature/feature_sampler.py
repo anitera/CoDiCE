@@ -89,8 +89,12 @@ class RuleSampler(ICEFeatureSampler):
         super().__init__(feature_name, feature_range)
         self._rule = rule_func
 
-    def _sample(self, instance):
-        return self._rule(instance.root[self.feature_name], instance)
+    def _sample(self, value):
+        return self._rule(value)
+
+    def _dependant_sample(self, instance: CEInstance, mf_result):
+        fname, fvalue = next(iter(mf_result.items()))
+        return self._sample(fvalue)
 
 
 class DependencySampler(ICEFeatureSampler):

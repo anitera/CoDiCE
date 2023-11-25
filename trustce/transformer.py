@@ -127,6 +127,9 @@ class FeatureTransformer(object):
             elif self.norm_type == "standard":
                 self.normalize_cont_value = lambda x: (x - self.mean) / self.std
                 self.denormalize_cont_value = lambda x: x * self.std + self.mean
+            elif self.norm_type == "none":
+                self.normalize_cont_value = lambda x: x
+                self.denormalize_cont_value = lambda x: x
 
             self.original_range = self.get_from_dataset(dataset)
             self.normalized_range = self.get_normalized_range(dataset)
@@ -147,6 +150,10 @@ class FeatureTransformer(object):
                 self._initialize_label_encoder(dataset)
                 self.normalize_cat_value = self._label_enc
                 self.denormalize_cat_value = self._label_dec
+            elif self.enc_type == "none":
+                # Probably should raise the warning that categorical feature is not encoded
+                self.normalize_cat_value = lambda x: x
+                self.denormalize_cat_value = lambda x: x
             else:
                 raise ValueError("En_label_enccoding type is not supported")
             self.normalized_range = self.apply_encoding(dataset)
@@ -184,6 +191,8 @@ class FeatureTransformer(object):
             # Calculate std for dataset[feature_name]
             standartised = (dataset.data[self.feature_name] - self.mean) / self.std
             return [standartised.min(), standartised.max()]
+        elif self.norm_type == "none":
+            return self.original_range
         else:
             raise ValueError("Normalization type is not supported")
 

@@ -9,7 +9,7 @@ from trustce.cfsearch import CFsearch
 
 from trustce.dataset import Dataset
 from trustce import load_datasets
-from trustce.explainable_model import ExplainableModel
+from trustce.cemodels.explainable_model import ExplainableModel
 
 from trustce.ceinstance.instance_sampler import CEInstanceSampler
 from trustce.config import Config

@@ -1,0 +1,23 @@
+{
+    "GPGOMEA": [
+        "( plog ( p/ ( * x0 x0 )( plog x2 )))",
+        "( + ( + ( p/ x0 x5 )( NAND x2 -69749.539000 ))( NAND ( NOR x3 -47671.917000 )( NOT x6 )))",
+        "( + ( + ( aq x0 x5 )( aq x1 x6 ))( p/ ( NOR x1 x2 )( sqrt x1 )))",
+        "( + ( + ( aq x0 x5 )( aq x1 x6 ))( p/ ( ^2 x1 )( * x3 -26194.233330 )))"
+    ],
+    "MSGP": [
+        "mul(sub(add(add(div(texture_mean, radius_mean), add(concavity_mean, concave_points_mean)), add(concavity_mean, concave_points_mean)), sub(mul(add(concave_points_mean, concavity_worst), add(smoothness_mean, radius_se)), div(mul(perimeter_mean, smoothness_mean), mul(concave_points_mean, radius_worst)))), div(div(mul(add(div(mul(compactness_mean, compactness_se), sub(texture_se, compactness_worst)), mul(mul(symmetry_mean, symmetry_worst), mul(concave_points_se, radius_mean))), sub(add(sub(area_worst, area_se), div(concave_points_se, smoothness_worst)), sub(div(radius_worst, perimeter_worst), div(smoothness_se, compactness_worst)))), add(add(mul(sub(perimeter_se, perimeter_worst), sub(fractal_dimension_mean, texture_worst)), mul(div(concave_points_se, concavity_se), mul(area_se, area_worst))), mul(mul(div(symmetry_mean, fractal_dimension_mean), mul(concave_points_mean, area_mean)), sub(mul(area_mean, area_worst), sub(concavity_mean, concavity_mean))))), add(add(mul(sub(perimeter_se, perimeter_worst), sub(fractal_dimension_mean, texture_worst)), mul(div(concave_points_se, concavity_se), mul(area_se, area_worst))), mul(mul(div(symmetry_mean, fractal_dimension_mean), mul(concave_points_mean, area_mean)), sub(mul(area_mean, area_worst), sub(concavity_mean, concavity_mean))))))",
+        "mul(sub(mul(mul(add(div(texture_mean, radius_mean), add(concavity_mean, concave_points_mean)), add(fractal_dimension_se, radius_worst)), sub(concave_points_mean, div(symmetry_mean, fractal_dimension_worst))), sub(mul(add(concave_points_mean, concavity_worst), add(smoothness_mean, radius_se)), div(mul(perimeter_mean, smoothness_mean), mul(concave_points_mean, radius_worst)))), div(mul(add(div(mul(compactness_mean, compactness_se), sub(texture_se, compactness_worst)), mul(smoothness_mean, mul(concave_points_se, radius_mean))), sub(add(sub(area_worst, area_se), div(concave_points_se, smoothness_worst)), sub(div(radius_worst, perimeter_worst), div(smoothness_se, compactness_worst)))), add(add(mul(sub(perimeter_se, perimeter_worst), sub(fractal_dimension_mean, texture_worst)), mul(div(concave_points_se, concavity_se), mul(area_se, area_worst))), mul(mul(div(symmetry_mean, fractal_dimension_mean), mul(concave_points_mean, area_mean)), sub(mul(area_mean, area_worst), sub(concavity_mean, concavity_mean))))))",
+        "mul(sub(mul(mul(sub(texture_worst, symmetry_mean), add(fractal_dimension_se, radius_worst)), sub(sub(compactness_mean, smoothness_se), div(symmetry_mean, fractal_dimension_worst))), sub(mul(add(concave_points_mean, concavity_worst), add(compactness_worst, radius_se)), div(mul(perimeter_mean, concavity_mean), mul(concavity_mean, radius_worst)))), div(div(div(sub(symmetry_mean, smoothness_mean), sub(area_worst, concave_points_se)), mul(div(symmetry_worst, symmetry_se), div(texture_se, concave_points_mean))), sub(div(add(smoothness_worst, smoothness_mean), add(smoothness_mean, radius_worst)), sub(div(fractal_dimension_se, perimeter_mean), div(perimeter_se, fractal_dimension_se)))))"
+    ],
+    "Cart-Pole": [
+        "add(div(Req1_Timeout, Restaurant_X), div(Driver_X, Req2_Y))",
+        "add(add(sign(div(Driver_X, Restaurant_Y)), sub(mult(Driver_X, Driver_Used_Cap), mult(Restaurant_X, Driver_Full_Cap))), mult(add(div(Driver_Y, Req1_Res_Map), sign(Req2_Y)), add(Req2_Y, Req2_Res_Map)))",
+        "mult(sign(div(Req1_Promise, Req1_Status)), mult(sign(sign(Req1_Timeout)), add(sub(Driver_Full_Cap, Req2_Y), div(Req2_Y, Req1_Status))))"
+    ],
+    "Meal-delivery": [
+        "mult(add(Req1_X, Req1_X), mult(Driver_Used_Cap, Req1_Timeout))",
+        "add(sub(add(Req2_Res_Map, Req2_Res_Map), Req2_Promise), mult(sign(Req1_Promise), sub(Driver_Full_Cap, Req1_Res_Map)))",
+        "add(sub(add(Req2_Res_Map, Req2_Res_Map), Req2_Promise), mult(sign(Req1_Promise), sub(Driver_Full_Cap, Req1_Res_Map)))"
+    ]
+}

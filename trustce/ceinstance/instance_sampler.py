@@ -117,7 +117,6 @@ class CEInstanceSampler(object):
         elif feature_name in self.transformers.categorical_features_transformers:
             feature_range = self.transformers.categorical_features_transformers[feature_name].normalized_range
 
-
         return feature_range
 
     def create_feature_samplers(self, transformers, normalization=True):

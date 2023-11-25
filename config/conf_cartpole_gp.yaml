@@ -1,0 +1,38 @@
+dataset:
+  type: csv # or csv
+  path: datasets/cartpole.xls
+  continuous_features: ["Req1_Timeout","Restaurant_X","Driver_X","Req2_Y","Req2_Res_Map", "Req2_Promise"]
+  categorical_features: []
+  target: Req2_Promise
+
+constraints_file: config/constraints_conf_gp.json
+output_folder: results
+
+model:
+  model_type: regression
+  model_backend: gp # we can use sklearn 
+  state: pretrained
+  name: Cart-Pole
+  gp_params:
+    model_number: 1
+  path: models/trust-models.json
+  categorical_features_encoding: none # Possible values: [onehot, label_encoder, frequency, none]
+  continuous_features_normalization: none # Possible values: [minmax, standard, none]
+
+cfsearch:
+  optimizer: genetic # Possible values: [random, CPLEX, genetic], currently supported genetic
+  loss_type: hinge
+  continuous_distance:
+    type: weighted_l1 # Possible values: [weighted_l1, diffusion]
+    diffusion_params:
+      kernel_size: 2  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
+      number_of_eigenvectors: 50 # how many dimensions or features of the diffusion space you want to consider
+    weighted_l1_params:
+      weights: [1, 1, 1, 1]
+  categorical_distance: hamming # l1
+  sparsity: False # True
+  coherence: True # False # True
+  search_normalization: False # standard
+  search_encoding: False # frequency
+  objective_function_weights: [0.5, 0.5, 0.5] # loss, distance, coherence TODO add sparsity
+  feature_weights: False

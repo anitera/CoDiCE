@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from trustce.cfsearch import CFsearch
 
 from trustce.dataset import Dataset
-from trustce.explainable_model import ExplainableModel
+from trustce.cemodels.explainable_model import ExplainableModel
 
 from trustce.ceinstance.instance_sampler import CEInstanceSampler
 from trustce.config import Config

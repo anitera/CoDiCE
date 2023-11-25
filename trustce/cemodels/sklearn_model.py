@@ -18,6 +18,8 @@ class SklearnModel(ModelInterface):
             self.model = self.load_model(self.model_path)
         else: self.model = self.train(model_config)
 
+        self.sanity_check()
+
     def train(self, model_config):
         # Implement the train method for sklearn model
         raise NotImplementedError
@@ -56,10 +58,10 @@ class SklearnModel(ModelInterface):
         with open(self.config["path"], 'rb') as f:
             try:
                 import sklearn
-                self.model = load(f)
-            except:
-                raise Exception("Sklearn not installed or model can't be loaded")
-        pass
+                model = load(f)
+                return model
+            except Exception as e:
+                print(f"Error loading model: {e}")
 
     def get_base_estimator_input_shape(self):
         """
@@ -102,3 +104,4 @@ class SklearnModel(ModelInterface):
             fake_input = np.random.rand(input_shape)
             fake_input = fake_input.reshape(1, -1)
             self.predict(fake_input)
+            print("Sanity check prediciton ", self.predict(fake_input))

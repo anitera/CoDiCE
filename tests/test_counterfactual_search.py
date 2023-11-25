@@ -9,7 +9,7 @@ from trustce.cfsearch import CFsearch
 
 from trustce.dataset import Dataset
 from trustce import load_datasets
-from trustce.cemodels.explainable_model import ExplainableModel
+from trustce.cemodels.sklearn_model import SklearnModel
 
 from trustce.ceinstance.instance_sampler import CEInstanceSampler
 from trustce.config import Config
@@ -35,7 +35,7 @@ class TestCFSearch(unittest.TestCase):
         self.instance_factory = InstanceFactory(self.data)
         self.sampler = CEInstanceSampler(self.config, self.normalization_transformer, self.instance_factory)
 
-        self.model = ExplainableModel(self.config.get_config_value("model"))
+        self.model = SklearnModel(self.config.get_config_value("model"))
         config_for_cfsearch = self.config.get_config_value("cfsearch")
         self.search = CFsearch(self.normalization_transformer, self.model, self.sampler, 
                                config=self.config,

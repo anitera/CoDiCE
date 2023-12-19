@@ -84,6 +84,11 @@ class CFsearch:
         self.diffusion_map = None
         if self.distance_continuous["type"] == "diffusion":
             self.diffusion_map = self.transformer.diffusion_map
+            self.local_scale = self.transformer.local_scale
+            self.eigenvalues = self.transformer.eigenvalues
+            self.eigenvectors = self.transformer.eigenvectors
+            self.k = self.transformer.k_neighbors
+            self.alpha = self.transformer.alpha
         self.mads = self.transformer.mads
         return self.objective_function_weights
 
@@ -93,16 +98,53 @@ class CFsearch:
         self.original_instance = query_instance
         self.query_instance = query_instance
         self.transformer.normalize_instance(self.query_instance)
-        original_prediction = self.model.predict_instance(self.query_instance)
+        self.original_instance_prediciton = self.model.predict_instance(self.query_instance)
         if desired_class == "opposite" and self.model.model_type == "classification":
-            self.desired_output = 1 - original_prediction
+            self.desired_output = 1 - self.original_instance_prediciton
         elif self.model.model_type == "regression":
             self.desired_output = [desired_class[0], desired_class[1]]
         else:
             self.desired_output = desired_class
         
-        self.counterfactuals = self.optimizer.find_counterfactuals(self.query_instance, number_cf, self.desired_output, maxiterations)
-        return self.counterfactuals
+        self.counterfactual_instances = self.optimizer.find_counterfactuals(self.query_instance, number_cf, self.desired_output, maxiterations)
+        return self.counterfactual_instances
+        '''
+        # Rounding
+        print("Visualizing before rounding")
+        # Checking validity all logic for one cf
+        for cf in self.counterfactual_instances:
+            validity = self.check_validity(cf)
+        self.visualize_as_dataframe(self.original_instance, self.counterfactual_instances)
+        rounding = True
+        rounded_counterfactuals = []
+        if rounding == True:
+            for cf in self.counterfactual_instances:
+                rounded_cf = self.round_modified_values(query_instance, cf, decimal_places=2)
+                if self.is_outcome_same(cf, rounded_cf):
+                    rounded_counterfactuals.append(rounded_cf)
+                else:
+                    rounded_counterfactuals.append(cf)
+            print("Visualizing after rounding")
+            self.visualize_as_dataframe(self.original_instance, rounded_counterfactuals)
+            return rounded_counterfactuals
+        else:
+            return self.counterfactual_instances
+        '''
+    
+    def round_modified_values(self, original_instance, counterfactual_instance, decimal_places=0):
+        """Round only the modified values in the counterfactual instance."""
+        rounded_cf = copy(counterfactual_instance)
+        for feature in counterfactual_instance.features:
+            if counterfactual_instance.features[feature].value != original_instance.features[feature].value:
+                rounded_cf.features[feature].value = round(counterfactual_instance.features[feature].value, decimal_places)
+        return rounded_cf
+
+    def is_outcome_same(self, original_cf, rounded_cf):
+        """Check if the outcome is the same for the original and rounded counterfactuals."""
+        original_outcome = self.model.predict_instance(original_cf)
+        rounded_outcome = self.model.predict_instance(rounded_cf)
+        return original_outcome == rounded_outcome
+
     
     def evaluate_counterfactuals(self, original_instance, counterfactual_instances):
         # compute validity
@@ -164,18 +206,26 @@ class CFsearch:
             # transform the original point to diffusion space
             point = original_instance.get_numerical_features_values()
             point = np.array(point).reshape(1, -1)
-            point_diffusion = self.diffusion_map.transform(point)
+            point_diffusion = self.project_point_to_diffusion_space(point)
 
             # transform the counterfactual point to diffusion space
             counterfactual = counterfactual_instance.get_numerical_features_values()
             counterfactual = np.array(counterfactual).reshape(1, -1)
-            counterfactual_diffusion = self.diffusion_map.transform(counterfactual)
+            counterfactual_diffusion = self.project_point_to_diffusion_space(counterfactual)
 
             # Calculate the Euclidean distance between the point and the counterfactuals
-            euc_distance = distance.cdist(point_diffusion, counterfactual_diffusion, 'euclidean')
+            euc_distance = np.linalg.norm(counterfactual_diffusion - point_diffusion)
             distance_continuous = euc_distance
             
         return distance_continuous
+    
+    def project_point_to_diffusion_space(self, new_point):
+        distances = np.sqrt(np.sum((self.transformer.normlaize_cont_dataset_numpy - new_point)**2, axis=1))
+        local_scale_new_point = np.sort(distances)[self.k]
+        affinity = np.exp(-distances ** 2 / (self.local_scale * local_scale_new_point))
+        affinity /= affinity.sum()
+        projection = (self.eigenvectors * (self.eigenvalues**self.alpha)).T @ affinity
+        return projection
     
     def sparsity_continuous(self, original_instance, counterfactual_instance):
         """Calculate sparsity function for continuous features"""
@@ -283,13 +333,19 @@ class CFsearch:
         counterfactual_instance_value = counterfactual_instance.features[feature_name].value
         print("Feature {} changed its value from {} to {}".format(feature_name, original_instance.features[feature_name].value, counterfactual_instance.features[feature_name].value))
         # Current prediction of original instance
-        original_prediction = self.model.predict_proba_instance(original_instance)
         # Let's change only counterfactual value of the feature
         control_instance.features[feature_name].value = counterfactual_instance_value
-        # Current prediction of control instance
-        control_prediction = self.model.predict_proba_instance(control_instance)
-        probability_sign = np.sign(control_prediction - original_prediction)
-        return probability_sign[required_label]
+        # If it is classification
+        if self.model.model_type == "classification":
+            original_prediction = self.model.predict_proba_instance(original_instance)
+            control_prediction = self.model.predict_proba_instance(control_instance)
+            probability_sign = np.sign(control_prediction - original_prediction)
+            return probability_sign[required_label]
+        else:
+            original_prediction = self.model.predict_instance(original_instance)
+            control_prediction = self.model.predict_instance(control_instance)
+            probability_sign = np.sign(control_prediction - original_prediction)
+            return probability_sign
     
     
     def get_marginal_sign_for_feature(self, original_instance, counterfactual_instance, feature_name, required_label):
@@ -346,7 +402,7 @@ class CFsearch:
     def visualize_counterfactuals(self):
         return
     
-    def visualize_as_dataframe(self, display_sparse_df=True, show_only_changes=False):
+    def visualize_as_dataframe(self, target_instance, counterfactuals, display_sparse_df=True, show_only_changes=False):
         from IPython.display import display
         import pandas as pd
 
@@ -355,13 +411,13 @@ class CFsearch:
         if self.query_instance.normalized:
             self.transformer.denormalize_instance(self.query_instance)
         display(pd.DataFrame([self.query_instance.get_values_dict()]))  # works only in Jupyter notebook
-        self._visualize_internal(show_only_changes=show_only_changes,
+        self._visualize_internal(target_instance, counterfactuals, show_only_changes=show_only_changes,
                                  is_notebook_console=True)
         
-    def _visualize_internal(self, show_only_changes=False, is_notebook_console=False):
-        if self.counterfactual_instances is not None and len(self.counterfactual_instances) > 0:
+    def _visualize_internal(self, target_instance, counterfactuals, show_only_changes=False, is_notebook_console=False):
+        if counterfactuals is not None and len(counterfactuals) > 0:
             print('\nCounterfactual set (new outcome: {0})'.format(self.new_outcome)) # if more than 1 cf won't work
-            self._dump_output(content=self.counterfactual_instances, show_only_changes=show_only_changes,
+            self._dump_output(content=counterfactuals, show_only_changes=show_only_changes,
                                 is_notebook_console=is_notebook_console)
         else:
             print('\nNo counterfactuals found!')

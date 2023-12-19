@@ -234,9 +234,11 @@ class GeneticOptimizer():
                 child1, child2 = self.one_point_crossover(top_individuals[i], top_individuals[len(top_individuals)-1-i])
                 children.append(child1)
                 children.append(child2)
-            # mutate with probability of mutation
+            # mutate with probability of mutation Maybe decrease mutation within convergence
             for i in range(len(children)):
-                children[i] = self.mutate(children[i])
+                # If the mutation probability is greater than a random number, mutate
+                if random.random() < 0.1:
+                    children[i] = self.mutate(children[i])
             # concatenate children and top individuals
             self.population = top_individuals + children
             fitness_list = self.evaluate_population(self.population, query_instance, desired_output)
@@ -245,5 +247,6 @@ class GeneticOptimizer():
             best_candidates_history.append(self.sorted_population[0])
             iterations += 1
 
+        
         self.counterfactuals = self.population[:number_cf]
         return self.counterfactuals

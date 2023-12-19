@@ -21,10 +21,10 @@ cfsearch:
   optimizer: genetic # Possible values: [random, CPLEX, genetic], currently supported genetic
   loss_type: hinge
   continuous_distance:
-    type: weighted_l1 # Possible values: [weighted_l1, diffusion]
+    type: diffusion # Possible values: [weighted_l1, diffusion]
     diffusion_params:
-      kernel_size: 2  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
-      number_of_eigenvectors: 50 # how many dimensions or features of the diffusion space you want to consider
+      k_neighbors: 8  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
+      alpha: 1 # how many dimensions or features of the diffusion space you want to consider
     weighted_l1_params:
       weights: [1, 1, 1, 1]
   categorical_distance: hamming # l1

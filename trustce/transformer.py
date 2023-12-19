@@ -9,8 +9,12 @@ class Transformer(object):
         self.continuous_features_transformers = self.get_cont_features_transformers(dataset, config)
         self.categorical_features_transformers = self.get_cat_features_transformers(dataset, config)
         if config.get_config_value("cfsearch")["continuous_distance"]["type"]=="diffusion":
-            self.diffusion_map = self._get_diffusion_map(dataset, kernel_size=config.get_config_value("cfsearch")["continuous_distance"]["diffusion_params"]["kernel_size"], 
-                                                         n_eigenvecs=config.get_config_value("cfsearch")["continuous_distance"]["diffusion_params"]["number_of_eigenvectors"])
+            dataset.data[dataset.continuous_features_list] = (dataset.data[dataset.continuous_features_list] - dataset.data[dataset.continuous_features_list].mean()) / dataset.data[dataset.continuous_features_list].std()
+            self.normlaize_cont_dataset_numpy = dataset.data[dataset.continuous_features_list].to_numpy()
+            self.k_neighbors = config.get_config_value("cfsearch")["continuous_distance"]["diffusion_params"]["k_neighbors"]
+            self.alpha = config.get_config_value("cfsearch")["continuous_distance"]["diffusion_params"]["alpha"]
+            self.diffusion_map, self.local_scale, self.eigenvalues, self.eigenvectors = self.custom_diff_map(k_neighbors=self.k_neighbors, 
+                                                      alpha=self.alpha)
         self.mads = self._get_mads(dataset)
 
     def normalize_instance(self, instance):
@@ -94,9 +98,27 @@ class Transformer(object):
 
         return diff_map
 
-    def custom_diff_map(self, dataset, kernel_size=6, n_neighbors=6, n_eigenvecs=3):
+    def custom_diff_map(self, k_neighbors=6, alpha=1.0):
         """Calculate diffusion map for continous features with number of neighbors as parameter"""
-        pass
+        # Normalize data
+        dist_matrix = distance_matrix(self.normlaize_cont_dataset_numpy, self.normlaize_cont_dataset_numpy)
+        # Self-tuning kernel
+        local_scale = np.sort(dist_matrix, axis=1)[:, k_neighbors]
+        local_scale_matrix = local_scale[:, np.newaxis] * local_scale
+        affinity_matrix = np.exp(-dist_matrix ** 2 / local_scale_matrix)
+
+        # Row normalize the affinity matrix
+        row_sums = affinity_matrix.sum(axis=1)
+        transition_matrix = affinity_matrix / row_sums[:, np.newaxis]
+
+        # Compute all eigenvalues and eigenvectors
+        eigenvalues, eigenvectors = eigh(transition_matrix.T)
+        eigenvalues = np.real(eigenvalues[::-1])  # Reversing to get descending order
+        eigenvectors = np.real(eigenvectors[:, ::-1])  # Reversing to match eigenvalues
+
+        # Create the full-dimensional diffusion map
+        diffusion_map = eigenvectors * eigenvalues**alpha
+        return diffusion_map, local_scale, eigenvalues, eigenvectors
 
 
     def _get_mads(self, dataset):

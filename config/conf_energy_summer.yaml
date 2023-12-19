@@ -1,0 +1,38 @@
+dataset:
+  type: csv # or csv
+  path: datasets/summer_data.csv
+  continuous_features: ["indoor_temperature","outdoor_temperature", "active_electricity_8"]
+  categorical_features: []
+  target: active_electricity
+
+constraints_file: config/constraints_conf_energy.json
+output_folder: results
+
+model:
+  model_type: regression
+  model_backend: gp # we can use sklearn 
+  state: pretrained
+  name: energy_summer
+  gp_params:
+    model_number: 1
+  path: models/energy_summer_gplearn.pkl
+  categorical_features_encoding: none # Possible values: [onehot, label_encoder, frequency, none]
+  continuous_features_normalization: none # Possible values: [minmax, standard, none]
+
+cfsearch:
+  optimizer: genetic # Possible values: [random, CPLEX, genetic], currently supported genetic
+  loss_type: hinge
+  continuous_distance:
+    type: weighted_l1 # Possible values: [weighted_l1, diffusion]
+    diffusion_params:
+      kernel_size: 2  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
+      number_of_eigenvectors: 50 # how many dimensions or features of the diffusion space you want to consider
+    weighted_l1_params:
+      weights: [1, 1, 1, 1]
+  categorical_distance: hamming # l1
+  sparsity: False # True
+  coherence: True # False # True
+  search_normalization: False # standard
+  search_encoding: False # frequency
+  objective_function_weights: [0.5, 0.5, 0.5] # loss, distance, coherence TODO add sparsity
+  feature_weights: False

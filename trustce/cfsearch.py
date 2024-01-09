@@ -53,6 +53,7 @@ class CFsearch:
             filename = indexname + "_" + str(i) + ".json"
             json_path = os.path.join(output_folder, filename)
             # Store counterfactuals in json file
+            print("Store counterfactuals to ", json_path)
             with open(json_path, 'w') as file:
                 counterfactual_values = self.counterfactual_instances[i].get_values_dict()
                 json.dump(counterfactual_values, file, indent=4, default=self.default_serializer)
@@ -71,6 +72,7 @@ class CFsearch:
             filename = indexname + "_eval_" + str(i) + ".json"
             json_path = os.path.join(output_folder, filename)
             # Store counterfactuals in json file
+            print("Store counterfactuals evaluation to ", json_path)
             with open(json_path, 'w') as file:
                 json.dump(self.evaluations[i], file, indent=4, default=self.default_serializer)
         #TODO

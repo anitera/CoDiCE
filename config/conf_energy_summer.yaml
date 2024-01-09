@@ -30,7 +30,10 @@ cfsearch:
     weighted_l1_params:
       weights: [1, 1, 1, 1]
   categorical_distance: hamming # l1
-  sparsity: False # True
+  sparsity_penalty: 
+    type: elastic_net
+    alpha: 0.5
+    beta: 0.5
   coherence: True # False # True
   search_normalization: False # standard
   search_encoding: False # frequency

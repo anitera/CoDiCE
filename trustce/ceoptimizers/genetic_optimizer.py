@@ -3,7 +3,7 @@ from copy import copy
 
 # TODO: make Optimizer parent class and implement genetic optimizer as child class
 class GeneticOptimizer():
-    def __init__(self, model, transformer, instance_sampler, distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", coherence=False, hyperparameters=[0.2, 0.2, 0.2], diffusion_map=None, mads=None):
+    def __init__(self, model, transformer, instance_sampler, distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", sparsity_penalty="elastic_net", alpha=0.5, beta=0.5, coherence=False, hyperparameters=[0.2, 0.2, 0.2], diffusion_map=None, mads=None):
         """Initialize data metaparmeters and model"""
         self.model = model
         self.transformer = transformer
@@ -11,6 +11,9 @@ class GeneticOptimizer():
         self.distance_categorical = distance_categorical
         self.loss_type = loss_type
         self.diffusion_map = diffusion_map
+        self.sparsity_penalty = sparsity_penalty
+        self.alpha = alpha
+        self.beta = beta
         self.coherence = coherence
         self.mads = mads
         self.hyperparameters = hyperparameters
@@ -48,12 +51,53 @@ class GeneticOptimizer():
                 distance_continuous = distance_continuous/self.transformer.get_cat_transformers_length()
         distance = distance_continuous + distance_categorical
 
+        if self.sparsity_penalty == "elastic_net":
+            epsilon = 1e-5
+            l1_penalty_approx = 0
+            l2_penalty_approx = 0
+            # check if changed features are sparse
+
+            base_prediction = self.model.predict_instance(counterfactual_instance)
+
+            for feature_name in self.transformer.continuous_features_transformers:
+                original_feature_value = counterfactual_instance.features[feature_name].value
+                # Continuous feature perturbation
+                counterfactual_instance.features[feature_name].value += epsilon
+
+                perturbed_prediction = self.model.predict_instance(counterfactual_instance)
+                
+                # Approximate derivative (importance)
+                derivative = abs(perturbed_prediction - base_prediction) / (epsilon if feature_name in self.transformer.continuous_features_transformers else 1)
+                l1_penalty_approx += derivative
+                l2_penalty_approx += derivative ** 2
+
+    
+            for feature_name in self.transformer.categorical_features_transformers:
+                original_feature_value = counterfactual_instance.features[feature_name].value
+                # Categorical feature perturbation - switch category
+                # Check the length of the category list
+                num_categories = len(self.transformer.categorical_features_transformers[feature_name].categories)
+                counterfactual_instance.features[feature_name].value = (counterfactual_instance.features[feature_name].value + 1) % num_categories
+
+                perturbed_prediction = self.model.predict_instance(counterfactual_instance)
+                
+                # Approximate derivative (importance)
+                derivative = abs(perturbed_prediction - base_prediction) / (epsilon if feature_name in self.transformer.continuous_features_transformers else 1)
+                l1_penalty_approx += derivative
+                l2_penalty_approx += derivative ** 2
+                
+                # Reset feature value
+                counterfactual_instance.features[feature_name].value = original_feature_value
+
+            elastic_net_penalty_approx = self.beta * (self.alpha * l1_penalty_approx + (1 - self.alpha) * l2_penalty_approx)
+
+
         if self.coherence:
             coherence = 0
             # check if changed features are coherent with prediction direciton
         # calculate fitness function
         # TODO: normalize distance and loss
-        fitness = self.hyperparameters[0]*loss + self.hyperparameters[1]*distance + self.hyperparameters[2]*coherence
+        fitness = self.hyperparameters[0]*loss + self.hyperparameters[1]*distance + self.hyperparameters[2]*coherence + elastic_net_penalty_approx
         return fitness
 
     def generate_population(self, query_instance, population_size):

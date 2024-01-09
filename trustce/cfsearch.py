@@ -7,7 +7,8 @@ from trustce.ceoptimizers.optimizer_interface import OptimizerInterface, Optimiz
 
 class CFsearch:
     def __init__(self, transformer, model, sampler, config, optimizer_name="genetic", distance_continuous="weighted_l1", 
-                 distance_categorical="weighted_l1", loss_type="hinge_loss", coherence=False,
+                 distance_categorical="weighted_l1", loss_type="hinge_loss",
+                 sparsity_penalty="elastic_net", alpha=0.5, beta=0.5, coherence=False,
                  objective_function_weights = [0.5, 0.5, 0.5]):
         self.transformer = transformer
         self.model = model
@@ -16,6 +17,9 @@ class CFsearch:
         self.distance_continuous = distance_continuous
         self.distance_categorical = distance_categorical
         self.loss_type = loss_type
+        self.sparsity_penalty = sparsity_penalty
+        self.alpha = alpha
+        self.beta = beta
         self.coherence = coherence
         self.objective_function_weights = objective_function_weights
         self.counterfactuals = []
@@ -29,7 +33,7 @@ class CFsearch:
         """
         Initialize optimizer using OptimizerFactory
         """
-        self.optimizer = OptimizerFactory.get_optimizer(self.optimizer_name, self.model, self.transformer, self.instance_sampler, self.distance_continuous, self.distance_categorical, self.loss_type, self.coherence, self.objective_function_weights, self.diffusion_map, self.mads)
+        self.optimizer = OptimizerFactory.get_optimizer(self.optimizer_name, self.model, self.transformer, self.instance_sampler, self.distance_continuous, self.distance_categorical, self.loss_type, self.sparsity_penalty, self.alpha, self.beta, self.coherence, self.objective_function_weights, self.diffusion_map, self.mads)
         return
 
     def store_counterfactuals(self, output_folder, indexname):
@@ -38,11 +42,11 @@ class CFsearch:
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
         # Getting the number of counterfactuals
-        number_cf = len(self.counterfactuals)
+        number_cf = len(self.counterfactual_instances)
         # Unnormalize counterfactuals
         for i in range(number_cf):
-            if self.counterfactuals[i].normalized:
-                self.transformer.denormalize_instance(self.counterfactuals[i])
+            if self.counterfactual_instances[i].normalized:
+                self.transformer.denormalize_instance(self.counterfactual_instances[i])
     
         # making filenames for every counterfactual
         for i in range(number_cf):
@@ -50,7 +54,7 @@ class CFsearch:
             json_path = os.path.join(output_folder, filename)
             # Store counterfactuals in json file
             with open(json_path, 'w') as file:
-                counterfactual_values = self.counterfactuals[i].get_values_dict()
+                counterfactual_values = self.counterfactual_instances[i].get_values_dict()
                 json.dump(counterfactual_values, file, indent=4, default=self.default_serializer)
         #TODO
         return
@@ -61,7 +65,7 @@ class CFsearch:
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
         # Getting the number of counterfactuals
-        number_cf = len(self.counterfactuals)
+        number_cf = len(self.counterfactual_instances)
         # making filenames for every counterfactual
         for i in range(number_cf):
             filename = indexname + "_eval_" + str(i) + ".json"
@@ -402,7 +406,7 @@ class CFsearch:
     def visualize_counterfactuals(self):
         return
     
-    def visualize_as_dataframe(self, target_instance, counterfactuals, display_sparse_df=True, show_only_changes=False):
+    def visualize_as_dataframe(self, target_instance, counterfactuals, display_sparse_df=True, show_only_changes=True):
         from IPython.display import display
         import pandas as pd
 
@@ -414,7 +418,7 @@ class CFsearch:
         self._visualize_internal(target_instance, counterfactuals, show_only_changes=show_only_changes,
                                  is_notebook_console=True)
         
-    def _visualize_internal(self, target_instance, counterfactuals, show_only_changes=False, is_notebook_console=False):
+    def _visualize_internal(self, target_instance, counterfactuals, show_only_changes=True, is_notebook_console=False):
         if counterfactuals is not None and len(counterfactuals) > 0:
             print('\nCounterfactual set (new outcome: {0})'.format(self.new_outcome)) # if more than 1 cf won't work
             self._dump_output(content=counterfactuals, show_only_changes=show_only_changes,
@@ -422,7 +426,7 @@ class CFsearch:
         else:
             print('\nNo counterfactuals found!')
 
-    def _dump_output(self, content, show_only_changes=False, is_notebook_console=False):
+    def _dump_output(self, content, show_only_changes=True, is_notebook_console=False):
         import pandas as pd
         if is_notebook_console:
             self.display_df(content, show_only_changes=show_only_changes)
@@ -450,7 +454,8 @@ class CFsearch:
         # We need to display denormalized feature
     
         if show_only_changes is False:
-            display(df)  # works only in Jupyter notebook
+            newdf = [cf_instance.get_list_of_features_values() for cf_instance in df]
+            display(pd.DataFrame(newdf, columns=self.original_instance.get_list_of_features_names()))  # works only in Jupyter notebook
         else:
             if df[0].normalized:
                 newdf = []

@@ -76,7 +76,7 @@ class GeneticOptimizer():
                 original_feature_value = counterfactual_instance.features[feature_name].value
                 # Categorical feature perturbation - switch category
                 # Check the length of the category list
-                num_categories = len(self.transformer.categorical_features_transformers[feature_name].categories)
+                num_categories = len(self.transformer.categorical_features_transformers[feature_name].original_range)
                 counterfactual_instance.features[feature_name].value = (counterfactual_instance.features[feature_name].value + 1) % num_categories
 
                 perturbed_prediction = self.model.predict_instance(counterfactual_instance)

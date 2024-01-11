@@ -45,7 +45,10 @@ class TestCFSearch(unittest.TestCase):
                                optimizer_name=config_for_cfsearch["optimizer"], 
                                distance_continuous=config_for_cfsearch["continuous_distance"], 
                                distance_categorical=config_for_cfsearch["categorical_distance"], 
-                               loss_type=config_for_cfsearch["loss_type"], 
+                               loss_type=config_for_cfsearch["loss_type"],
+                               sparsity_penalty=config_for_cfsearch["sparsity_penalty"]["type"],
+                               alpha=config_for_cfsearch["sparsity_penalty"]["alpha"],
+                               beta=config_for_cfsearch["sparsity_penalty"]["beta"], 
                                coherence=config_for_cfsearch["coherence"],
                                objective_function_weights=config_for_cfsearch["objective_function_weights"])
 

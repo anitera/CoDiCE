@@ -8,7 +8,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from trustce.cfsearch import CFsearch
 
 from trustce.dataset import Dataset
-from trustce.cemodels.explainable_model import ExplainableModel
+from trustce import load_datasets
+from trustce.cemodels.sklearn_model import SklearnModel
 
 from trustce.ceinstance.instance_sampler import CEInstanceSampler
 from trustce.config import Config
@@ -19,23 +20,37 @@ from trustce.ceinstance.instance_factory import InstanceFactory
 class TestCFSearch(unittest.TestCase):
     def setUp(self):
         # read config yml file from config folder
-        self.config = Config("config/conf.yaml")
-        with open("config/constraints_conf.json", 'r') as file:
+        self.config = Config("config/conf_homeloan.yaml")
+        with open("config/constraints_conf_no.json", 'r') as file:
             self.constraints = json.load(file)
         print(self.config)
 
-        self.target_instance_json = "datasets/instance.json"
+        self.target_instance_json = "input_instance/instance.json"
         
 
     def test_cf_search(self):
+        load_datasets.download("homeloan")
         self.data = Dataset(self.config.get_config_value("dataset"), "Loan_Status")
-        self.normalization_transformer = Transformer(self.data, self.config.get_config_value("feature_manager"))
+        self.normalization_transformer = Transformer(self.data, self.config)
         self.instance_factory = InstanceFactory(self.data)
-        self.sampler = CEInstanceSampler(self.config, self.normalization_transformer, self.instance_factory)
 
-        self.model = ExplainableModel(self.config.get_config_value("model"))
+        #custom_rules = {"coapplicantRule": sample_rule_based_functions}
 
-        self.search = CFsearch(self.normalization_transformer, self.model, self.sampler, algorithm="genetic", distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", sparsity_hp=0.2, coherence_hp=0.2, diversity_hp=0.2)
+        self.sampler = CEInstanceSampler(self.config, self.normalization_transformer, self.instance_factory) #custom_rules=custom_rules)
+
+        self.model = SklearnModel(self.config.get_config_value("model"))
+        config_for_cfsearch = self.config.get_config_value("cfsearch")
+        self.search = CFsearch(self.normalization_transformer, self.model, self.sampler, 
+                               config=self.config,
+                               optimizer_name=config_for_cfsearch["optimizer"], 
+                               distance_continuous=config_for_cfsearch["continuous_distance"], 
+                               distance_categorical=config_for_cfsearch["categorical_distance"], 
+                               loss_type=config_for_cfsearch["loss_type"], 
+                               sparsity_penalty=config_for_cfsearch["sparsity_penalty"]["type"],
+                               alpha=config_for_cfsearch["sparsity_penalty"]["alpha"],
+                               beta=config_for_cfsearch["sparsity_penalty"]["beta"], 
+                               coherence=config_for_cfsearch["coherence"],
+                               objective_function_weights=config_for_cfsearch["objective_function_weights"])
 
         with open(self.target_instance_json, 'r') as file:
             target_instance_json = file.read() #json.load(file)

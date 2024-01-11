@@ -5,7 +5,7 @@ dataset:
   categorical_features: ['Gender', 'Married', 'Dependents', 'Education', 'Self_Employed', 'Property_Area', 'Credit_History']
   target: Loan_Status
 
-constraints_file: config/constraints_conf.json
+constraints_file: config/constraints_conf_no.json
 output_folder: results
 
 model:
@@ -28,6 +28,10 @@ cfsearch:
     weighted_l1_params:
       weights: [1, 1, 1, 1]
   categorical_distance: hamming # l1
+  sparsity_penalty: 
+    type: elastic_net
+    alpha: 0.5
+    beta: 0.5
   sparsity: False # True
   coherence: True # False # True
   search_normalization: False # standard

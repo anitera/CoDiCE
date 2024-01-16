@@ -31,6 +31,17 @@ class ICEFeatureSampler(object):
     def validate(self, value):
         assert value >= self.feature_range[0] and value <= self.feature_range[1], "Value {} not in range {}".format(value, self.feature_range)
 
+class PermittedRangeSampler(ICEFeatureSampler):
+    def __init__(self, feature_name, feature_range, permitted_range):
+        super().__init__(feature_name, feature_range)
+        self.permitted_range = permitted_range
+
+    def _sample(self, value):
+        """Sample within the permitted range"""
+        assert isinstance(self.permitted_range, (tuple, list)) and len(self.permitted_range) == 2, "Permitted range must be a tuple or list of length 2" 
+        return np.random.uniform(self.permitted_range[0], self.permitted_range[1])
+
+
 class UniformSampler(ICEFeatureSampler):
     def __init__(self, feature_name, feature_range):
         super().__init__(feature_name, feature_range)

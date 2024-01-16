@@ -160,6 +160,9 @@ class CFsearch:
         self.original_instance = original_instance
         self.original_instance_prediciton = self.model.predict_instance(original_instance)
         self.counterfactual_instances = counterfactual_instances
+        if self.counterfactuals == []:
+            print("No counterfactuals found, nothing to evaluate.")
+            return
         for counterfactual_instance in self.counterfactual_instances:
             if not counterfactual_instance.normalized:
                 counterfactual_instance = self.transformer.normalize_instance(counterfactual_instance)

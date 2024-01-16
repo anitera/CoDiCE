@@ -1,7 +1,7 @@
 dataset:
   type: csv # or csv
   path: datasets/summer_data.csv
-  continuous_features: ["indoor_temperature","outdoor_temperature", "active_electricity_8"]
+  continuous_features: ["outdoor_temperature", "indoor_temperature", "active_electricity_8"]
   categorical_features: []
   target: active_electricity
 

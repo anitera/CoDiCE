@@ -205,13 +205,13 @@ class GeneticOptimizer():
         """Check if counterfactual instance is valid"""
         # check if counterfactual instance is valid
         if self.model.model_type == "classification":
-            counterfactual_prediction = self.model.predict(counterfactual_instance)
+            counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
             if counterfactual_prediction == desired_output:
                 return True
             else:
                 return False
         elif self.model.model_type == "regression":
-            counterfactual_prediction = self.model.predict(counterfactual_instance)
+            counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
             if desired_output[0] <= counterfactual_prediction <= desired_output[1]:
                 return True
             else:
@@ -291,6 +291,14 @@ class GeneticOptimizer():
             best_candidates_history.append(self.sorted_population[0])
             iterations += 1
 
+
         
-        self.counterfactuals = self.population[:number_cf]
+        # Checking if we have valid counterfactuals
+        for i in range(number_cf):
+            if self.check_prediction_one(self.sorted_population[i], desired_output):
+                self.counterfactuals.append(self.sorted_population[i])
+            else:
+                print("Not all conterfactuals are valid")
+        if self.counterfactuals == []:
+            print("No valid counterfactuals found, try to drop some of constraints!")
         return self.counterfactuals

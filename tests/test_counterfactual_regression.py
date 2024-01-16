@@ -42,7 +42,7 @@ class GPModelPipeline:
 class TestCFSearch(unittest.TestCase):
     def setUp(self):
         # read config yml file from config folder
-        self.config = Config("config/conf_energy_summer.yaml")
+        self.config = Config("config/conf_energy.yaml")
         with open("config/constraints_conf_energy.json", 'r') as file:
             self.constraints = json.load(file)
         print(self.config)

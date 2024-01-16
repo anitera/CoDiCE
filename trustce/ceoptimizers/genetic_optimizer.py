@@ -242,7 +242,7 @@ class GeneticOptimizer():
     def find_counterfactuals(self, query_instance, number_cf, desired_output, maxiterations):
         """Find counterfactuals by generating them through genetic algorithm"""
         # population size might be parameter or depend on number cf required
-        population_size = 10*number_cf
+        population_size = 50*number_cf
         # prepare data instance to format and transform categorical features
         query_original = copy(query_instance)
         # Normalization is happening one level above
@@ -281,7 +281,7 @@ class GeneticOptimizer():
             # mutate with probability of mutation Maybe decrease mutation within convergence
             for i in range(len(children)):
                 # If the mutation probability is greater than a random number, mutate
-                if random.random() < 0.1:
+                if random.random() < 0.5:
                     children[i] = self.mutate(children[i])
             # concatenate children and top individuals
             self.population = top_individuals + children

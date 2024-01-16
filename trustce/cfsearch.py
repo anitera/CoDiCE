@@ -113,6 +113,7 @@ class CFsearch:
             self.desired_output = desired_class
         
         self.counterfactual_instances = self.optimizer.find_counterfactuals(self.query_instance, number_cf, self.desired_output, maxiterations)
+        self.new_outcome = []
         return self.counterfactual_instances
         '''
         # Rounding
@@ -163,7 +164,7 @@ class CFsearch:
         if self.counterfactuals == []:
             print("No counterfactuals found, nothing to evaluate.")
             return
-        for counterfactual_instance in self.counterfactual_instances:
+        for i, counterfactual_instance in enumerate(counterfactual_instances):
             if not counterfactual_instance.normalized:
                 counterfactual_instance = self.transformer.normalize_instance(counterfactual_instance)
             distance_continuous = self.distance_counterfactual_continuous(original_instance, counterfactual_instance)
@@ -186,7 +187,7 @@ class CFsearch:
                                      "coherence_score": coherence_score,
                                      "incoherent_features": incoherent_features,
                                      "validity": validity,
-                                     "new_outcome": self.new_outcome})
+                                     "new_outcome": self.new_outcome[i]})
         return distance_continuous, distance_categorical, sparsity_cont, sparsity_cat, validity
     
     def distance_counterfactual_categorical(self, original_instance, counterfactual_instance):
@@ -258,18 +259,18 @@ class CFsearch:
         if self.model.model_type == "classification":
             counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
             if counterfactual_prediction == self.desired_output:
-                self.new_outcome = counterfactual_prediction
+                self.new_outcome.append(counterfactual_prediction)
                 return True
             else:
-                self.new_outcome = counterfactual_prediction
+                self.new_outcome.append(counterfactual_prediction)
                 return False
         elif self.model.model_type == "regression":
             counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
             if self.desired_output[0] <= counterfactual_prediction <= self.desired_output[1]:
-                self.new_outcome = counterfactual_prediction
+                self.new_outcome.append(counterfactual_prediction)
                 return True
             else:
-                self.new_outcome = counterfactual_prediction
+                self.new_outcome.append(counterfactual_prediction)
                 return False
         else:
             return False

@@ -112,8 +112,6 @@ class CEInstanceSampler(object):
         elif constraint['type'] == 'immutable':
             sampler = ImmutableSampler(feature_name, feature_range)
         elif constraint['type'] == 'permitted_range':
-            print(constraint['range'])
-            print(type(constraint['range']))
             assert isinstance(constraint['range'], (tuple, list)) and len(constraint['range']) == 2, "Permitted range must be a tuple or list of length 2"
             sampler = PermittedRangeSampler(feature_name, feature_range, constraint['range'])
         # ... Add further conditions as necessary

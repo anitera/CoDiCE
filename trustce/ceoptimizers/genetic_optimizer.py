@@ -29,6 +29,19 @@ class GeneticOptimizer():
             # TODO: take into consideration that predicitons might be not normalized
             # TODO: add loss function for regression
             loss = max(0, 1 - original_prediction * counterfactual_prediction)
+        elif self.loss_type == "MSE":
+            original_prediction = self.model.predict_instance(query_instance)
+            counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
+            loss = (original_prediction - counterfactual_prediction)**2
+        elif self.loss_type == "MAE":
+            original_prediction = self.model.predict_instance(query_instance)
+            counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
+            loss = abs(original_prediction - counterfactual_prediction)
+        elif self.loss_type == "RMSE":
+            original_prediction = self.model.predict_instance(query_instance)
+            counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
+            loss = (original_prediction - counterfactual_prediction)**2
+            loss = loss**0.5
         # calculate distance function depending on distance type
         distance_continuous = 0
         if self.distance_continuous["type"] == "weighted_l1":
@@ -50,7 +63,7 @@ class GeneticOptimizer():
             if len(self.transformer.categorical_features_transformers) > 0:
                 distance_continuous = distance_continuous/self.transformer.get_cat_transformers_length()
         distance = distance_continuous + distance_categorical
-
+        elastic_net_penalty_approx = 0
         if self.sparsity_penalty == "elastic_net":
             epsilon = 1e-5
             l1_penalty_approx = 0

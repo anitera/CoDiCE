@@ -80,13 +80,13 @@ class TestCFSearch(unittest.TestCase):
         return X_train, X_test, y_train, y_test
         
     def prepare_data(self):
-        input=pd.read_csv('datasets/summer_data.csv',sep=',')
-        input.rename(columns={'Datetime':'DateTime','oudoor_temperature':'outdoor_temperature'},inplace=True)
-        input=self.preprocess_dates_string(input, 'DateTime')
+        input=pd.read_csv('datasets/autumn_data.csv',sep=',')
+        #input.rename(columns={'Datetime':'DateTime','oudoor_temperature':'outdoor_temperature'},inplace=True)
+        #input=self.preprocess_dates_string(input, 'DateTime')
 
         #get X and y
         print(input.columns)
-        X=input.copy().drop(['DateTime','active_electricity'], axis=1)
+        X=input.copy().drop(['active_electricity'], axis=1)
         y=input.copy()['active_electricity']
 
         #split data
@@ -137,9 +137,9 @@ class TestCFSearch(unittest.TestCase):
         actual_output = self.model.predict_instance(target_instance)
         # 5% decreased output range
         target_output_upper_bound = actual_output * 0.95
-        target_output_lower_bound = actual_output * 0.9
+        target_output_lower_bound = actual_output * 0.65
 
-        counterfacturals = self.search.find_counterfactuals(target_instance, 1, [target_output_upper_bound, target_output_lower_bound], 100)
+        counterfacturals = self.search.find_counterfactuals(target_instance, 3, [target_output_lower_bound, target_output_upper_bound], 500)
 
 
         self.search.evaluate_counterfactuals(target_instance, counterfacturals)

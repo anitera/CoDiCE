@@ -1,6 +1,6 @@
 dataset:
   type: csv # or csv
-  path: datasets/summer_data.csv
+  path: datasets/autumn_data.csv
   continuous_features: ["outdoor_temperature", "indoor_temperature", "active_electricity_8"]
   categorical_features: []
   target: active_electricity
@@ -12,7 +12,7 @@ model:
   model_type: regression
   model_backend: gp # we can use sklearn 
   state: pretrained
-  name: energy_summer
+  name: energy_autumn
   gp_params:
     model_number: 1
   path: models/energy_summer_gplearn.pkl
@@ -21,7 +21,7 @@ model:
 
 cfsearch:
   optimizer: genetic # Possible values: [random, CPLEX, genetic], currently supported genetic
-  loss_type: hinge
+  loss_type: RMSE # Possible values: for regression [MSE, RMSE, MAE], for classification - [hinge]
   continuous_distance:
     type: weighted_l1 # Possible values: [weighted_l1, diffusion]
     diffusion_params:
@@ -31,7 +31,7 @@ cfsearch:
       weights: [1, 1, 1, 1]
   categorical_distance: hamming # l1
   sparsity_penalty: 
-    type: elastic_net
+    type: not # Possible values [elastic_net, not]
     alpha: 0.5
     beta: 0.5
   coherence: True # False # True

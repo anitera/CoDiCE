@@ -221,12 +221,19 @@ class CFsearch:
             distance_continuous = 0
             # Get only continuous features
             # transform the original point to diffusion space
-            point = original_instance.get_numerical_features_values()
+            is_norm = self.distance_continuous["diffusion_params"]["diffusion_normalization"]
+            if is_norm:
+                point = self.transformer.get_normed_numerical(original_instance)
+            else:   
+                point = original_instance.get_numerical_features_values()
             point = np.array(point).reshape(1, -1)
             point_diffusion = self.project_point_to_diffusion_space(point)
 
             # transform the counterfactual point to diffusion space
-            counterfactual = counterfactual_instance.get_numerical_features_values()
+            if is_norm:
+                counterfactual = self.transformer.get_normed_numerical(counterfactual_instance)
+            else:
+                counterfactual = counterfactual_instance.get_numerical_features_values()
             counterfactual = np.array(counterfactual).reshape(1, -1)
             counterfactual_diffusion = self.project_point_to_diffusion_space(counterfactual)
 

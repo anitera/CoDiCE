@@ -10,7 +10,14 @@ class Transformer(object):
         self.categorical_features_transformers = self.get_cat_features_transformers(dataset, config)
         if config.get_config_value("cfsearch")["continuous_distance"]["type"]=="diffusion":
             dataset.data[dataset.continuous_features_list] = (dataset.data[dataset.continuous_features_list] - dataset.data[dataset.continuous_features_list].mean()) / dataset.data[dataset.continuous_features_list].std()
-            self.normlaize_cont_dataset_numpy = dataset.data[dataset.continuous_features_list].to_numpy()
+            if config.get_config_value("cfsearch")["continuous_distance"]["diffusion_params"]["diffusion_normalization"]:
+                from sklearn.preprocessing import StandardScaler
+                self.scaler = StandardScaler()
+                self.scaler.fit(dataset.data[dataset.continuous_features_list].to_numpy())
+                self.norm_params = {feature: {"mean": self.scaler.mean_[i], "std": self.scaler.scale_[i]} for i, feature in enumerate(dataset.continuous_features_list)}
+                self.normlaize_cont_dataset_numpy = self.scaler.transform(dataset.data[dataset.continuous_features_list].to_numpy())
+            else:
+                self.normlaize_cont_dataset_numpy = dataset.data[dataset.continuous_features_list].to_numpy()
             self.k_neighbors = config.get_config_value("cfsearch")["continuous_distance"]["diffusion_params"]["k_neighbors"]
             self.alpha = config.get_config_value("cfsearch")["continuous_distance"]["diffusion_params"]["alpha"]
             self.diffusion_map, self.local_scale, self.eigenvalues, self.eigenvectors = self.custom_diff_map(k_neighbors=self.k_neighbors, 
@@ -27,7 +34,15 @@ class Transformer(object):
                 feature.value = self.categorical_features_transformers[feature_name].normalize_cat_value(feature.value)
             else:
                 raise ValueError("Feature name is not in continuous or categorical features list")
+
+    def get_normed_numerical(self, instance):
+        values = []
+        for feature_name, feature in instance.features.items():
+            if feature_name in self.continuous_features_transformers:
+                normed_value = (feature.value - self.norm_params[feature_name]["mean"]) / self.norm_params[feature_name]["std"]
+                values.append(normed_value)
         
+        return values
 
     def get_cont_features_transformers(self, dataset, config):
         return {feature_name: FeatureTransformer(dataset, config, feature_name) for feature_name in dataset.continuous_features_list}

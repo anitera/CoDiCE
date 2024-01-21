@@ -25,6 +25,7 @@ cfsearch:
     diffusion_params:
       k_neighbors: 8  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
       alpha: 1 # how many dimensions or features of the diffusion space you want to consider
+      diffusion_normalization: True # standard
     weighted_l1_params:
       weights: [1, 1, 1, 1]
   categorical_distance: hamming # l1

@@ -47,7 +47,7 @@ class TestCFSearch(unittest.TestCase):
             self.constraints = json.load(file)
         print(self.config)
 
-        self.target_instance_json = "input_instance/instance_energy_summer.json"
+        self.target_instance_json = "input_instance/instance_energy.json"
         # Load the model from the file
         self.prepare_data()
             
@@ -136,10 +136,10 @@ class TestCFSearch(unittest.TestCase):
         target_instance = self.instance_factory.create_instance_from_json(target_instance_json)
         actual_output = self.model.predict_instance(target_instance)
         # 5% decreased output range
-        target_output_upper_bound = actual_output * 0.95
-        target_output_lower_bound = actual_output * 0.65
+        target_output_upper_bound = actual_output * 0.9
+        target_output_lower_bound = actual_output * 0.35
 
-        counterfacturals = self.search.find_counterfactuals(target_instance, 3, [target_output_lower_bound, target_output_upper_bound], 500)
+        counterfacturals = self.search.find_counterfactuals(target_instance, 1, [target_output_lower_bound, target_output_upper_bound], 100)
 
 
         self.search.evaluate_counterfactuals(target_instance, counterfacturals)

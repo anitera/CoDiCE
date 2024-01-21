@@ -65,10 +65,9 @@ class CFsearch:
         # Ensure that the output folder exists
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
-        # Getting the number of counterfactuals
-        number_cf = len(self.counterfactual_instances)
+
         # making filenames for every counterfactual
-        for i in range(number_cf):
+        for i in range(len(self.evaluations)):
             filename = indexname + "_eval_" + str(i) + ".json"
             json_path = os.path.join(output_folder, filename)
             # Store counterfactuals in json file
@@ -114,6 +113,14 @@ class CFsearch:
         
         self.counterfactual_instances = self.optimizer.find_counterfactuals(self.query_instance, number_cf, self.desired_output, maxiterations)
         self.new_outcome = []
+        # Check validity
+        # Checking if we have valid counterfactuals
+        for cf in self.counterfactual_instances:
+            self.store_outcome(cf)
+            if self.check_validity(cf):
+                print("Valid counterfactuals were found: ", cf.get_values_dict())
+            else:
+                print("Not all conterfactuals are valid, but the closest instances reported")
         return self.counterfactual_instances
         '''
         # Rounding
@@ -164,7 +171,7 @@ class CFsearch:
         if self.counterfactuals == []:
             print("No counterfactuals found, nothing to evaluate.")
             return
-        for i, counterfactual_instance in enumerate(counterfactual_instances):
+        for i, counterfactual_instance in enumerate(self.counterfactual_instances):
             if not counterfactual_instance.normalized:
                 counterfactual_instance = self.transformer.normalize_instance(counterfactual_instance)
             distance_continuous = self.distance_counterfactual_continuous(original_instance, counterfactual_instance)
@@ -253,24 +260,25 @@ class CFsearch:
                 sparsity_categorical += 1
         return sparsity_categorical
     
+    def store_outcome(self, counterfactual_instance):
+        """Store the outcome of the counterfactual instance"""
+        self.new_outcome.append(self.model.predict_instance(counterfactual_instance))
+        return
+    
     def check_validity(self, counterfactual_instance):
         """Check if counterfactual instance is valid"""
         # check if counterfactual instance is valid
         if self.model.model_type == "classification":
             counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
             if counterfactual_prediction == self.desired_output:
-                self.new_outcome.append(counterfactual_prediction)
                 return True
             else:
-                self.new_outcome.append(counterfactual_prediction)
                 return False
         elif self.model.model_type == "regression":
             counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
             if self.desired_output[0] <= counterfactual_prediction <= self.desired_output[1]:
-                self.new_outcome.append(counterfactual_prediction)
                 return True
             else:
-                self.new_outcome.append(counterfactual_prediction)
                 return False
         else:
             return False

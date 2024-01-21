@@ -21,7 +21,7 @@ model:
 
 cfsearch:
   optimizer: genetic # Possible values: [random, CPLEX, genetic], currently supported genetic
-  loss_type: RMSE # Possible values: for regression [MSE, RMSE, MAE], for classification - [hinge]
+  loss_type: MAE # Possible values: for regression [MSE, RMSE, MAE], for classification - [hinge]
   continuous_distance:
     type: weighted_l1 # Possible values: [weighted_l1, diffusion]
     diffusion_params:

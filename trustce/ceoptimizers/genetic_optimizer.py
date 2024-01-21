@@ -1,5 +1,6 @@
 import random
-from copy import copy
+from copy import copy, deepcopy
+from trustce.ceinstance.instance_sampler import ImmutableSampler
 
 # TODO: make Optimizer parent class and implement genetic optimizer as child class
 class GeneticOptimizer():
@@ -28,20 +29,27 @@ class GeneticOptimizer():
             counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
             # TODO: take into consideration that predicitons might be not normalized
             # TODO: add loss function for regression
-            loss = max(0, 1 - original_prediction * counterfactual_prediction)
+            loss = max(0, 1 - desired_output * counterfactual_prediction)
         elif self.loss_type == "MSE":
             original_prediction = self.model.predict_instance(query_instance)
             counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
-            loss = (original_prediction - counterfactual_prediction)**2
+            loss_lower = (desired_output[0] - counterfactual_prediction)**2
+            loss_upper = (desired_output[1] - counterfactual_prediction)**2
+            loss = min(loss_lower, loss_upper)
         elif self.loss_type == "MAE":
             original_prediction = self.model.predict_instance(query_instance)
             counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
-            loss = abs(original_prediction - counterfactual_prediction)
+            loss_lower = abs(desired_output[0] - counterfactual_prediction)
+            loss_upper = abs(desired_output[1] - counterfactual_prediction)
+            loss = min(loss_lower, loss_upper)
         elif self.loss_type == "RMSE":
             original_prediction = self.model.predict_instance(query_instance)
             counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
-            loss = (original_prediction - counterfactual_prediction)**2
-            loss = loss**0.5
+            loss_lower = (desired_output[0] - counterfactual_prediction)**2
+            loss_lower = loss_lower**0.5
+            loss_upper = (desired_output[1] - counterfactual_prediction)**2
+            loss_upper = loss_upper**0.5
+            loss = min(loss_lower, loss_upper)
         # calculate distance function depending on distance type
         distance_continuous = 0
         if self.distance_continuous["type"] == "weighted_l1":
@@ -136,11 +144,15 @@ class GeneticOptimizer():
          # Ensure parents are of the same type and have the same schema
         assert parent1.features.keys() == parent2.features.keys()
 
-        child1 = copy(parent1)
-        child2 = copy(parent2)
+        child1 = deepcopy(parent1)
+        child2 = deepcopy(parent2)
+
+        #child1 = copy(parent1)
+        #child2 = copy(parent2)
 
         # Get ordered feature names
         feature_names = list(parent1.features.keys())
+        feature_names = [feature_name for feature_name in feature_names if not isinstance(self.instance_sampler.feature_samplers[feature_name], ImmutableSampler)]
         rand_key = random.choice(feature_names)
 
         # Swap values after the random key
@@ -155,11 +167,14 @@ class GeneticOptimizer():
     def mutate(self, instance):
         """Perform mutation"""
         # Create a copy of the instance to mutate
-        mutated_instance = copy(instance)
+        #mutated_instance = copy(instance)
+        mutated_instance = deepcopy(instance)
 
         # Get ordered feature names
         feature_names = list(instance.features.keys())
 
+        # Get feature names with no immutability constraints
+        feature_names = [feature_name for feature_name in feature_names if not isinstance(self.instance_sampler.feature_samplers[feature_name], ImmutableSampler)]
         # Select random feature for mutation
         mutation_key = random.choice(feature_names)
 
@@ -255,9 +270,8 @@ class GeneticOptimizer():
     def find_counterfactuals(self, query_instance, number_cf, desired_output, maxiterations):
         """Find counterfactuals by generating them through genetic algorithm"""
         # population size might be parameter or depend on number cf required
-        population_size = 50*number_cf
+        population_size = 10*number_cf
         # prepare data instance to format and transform categorical features
-        query_original = copy(query_instance)
         # Normalization is happening one level above
         #self.transformer.normalize_instance(query_instance)
         # find predictive value of original instance
@@ -271,9 +285,11 @@ class GeneticOptimizer():
         stop_count = 0
         self.population = self.generate_population(query_instance, population_size)
         fitness_list = self.evaluate_population(self.population, query_instance, desired_output)
-        self.sorted_population, sorted_fitness = self.sort_population(self.population, fitness_list)
-        fitness_history.append(sorted_fitness[0])
-        best_candidates_history.append(self.sorted_population[0])
+        
+        # Sorting didn't work properly
+        self.population, fitness_list = self.sort_population(self.population, fitness_list)
+        fitness_history.append(fitness_list[0])
+        best_candidates_history.append(self.population[0]) 
 
         # until the stopping criteria is reached
         while iterations < maxiterations and len(self.counterfactuals) < number_cf:
@@ -291,27 +307,20 @@ class GeneticOptimizer():
                 child1, child2 = self.one_point_crossover(top_individuals[i], top_individuals[len(top_individuals)-1-i])
                 children.append(child1)
                 children.append(child2)
+            self.population = top_individuals + children
+            # For debugging
             # mutate with probability of mutation Maybe decrease mutation within convergence
-            for i in range(len(children)):
+            for i in range(len(self.population)):
                 # If the mutation probability is greater than a random number, mutate
                 if random.random() < 0.5:
-                    children[i] = self.mutate(children[i])
-            # concatenate children and top individuals
-            self.population = top_individuals + children
+                    self.population[i] = self.mutate(self.population[i])
             fitness_list = self.evaluate_population(self.population, query_instance, desired_output)
-            self.sorted_population, sorted_fitness = self.sort_population(self.population, fitness_list)
-            fitness_history.append(sorted_fitness[0])
-            best_candidates_history.append(self.sorted_population[0])
+            self.population, fitness_list = self.sort_population(self.population, fitness_list)
+            fitness_history.append(fitness_list[0])
+            best_candidates_history.append(self.population[0])
+
             iterations += 1
 
+        self.counterfactuals = self.population[:number_cf]
 
-        
-        # Checking if we have valid counterfactuals
-        for i in range(number_cf):
-            if self.check_prediction_one(self.sorted_population[i], desired_output):
-                self.counterfactuals.append(self.sorted_population[i])
-            else:
-                print("Not all conterfactuals are valid")
-        if self.counterfactuals == []:
-            print("No valid counterfactuals found, try to drop some of constraints!")
         return self.counterfactuals

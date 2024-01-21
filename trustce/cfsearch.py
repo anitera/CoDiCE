@@ -168,7 +168,7 @@ class CFsearch:
         self.original_instance = original_instance
         self.original_instance_prediciton = self.model.predict_instance(original_instance)
         self.counterfactual_instances = counterfactual_instances
-        if self.counterfactuals == []:
+        if self.counterfactual_instances == []:
             print("No counterfactuals found, nothing to evaluate.")
             return
         for i, counterfactual_instance in enumerate(self.counterfactual_instances):

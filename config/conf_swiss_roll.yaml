@@ -1,11 +1,11 @@
 dataset:
   type: csv # or csv
-  path: datasets/homeloan_train.xls
-  continuous_features: ['ApplicantIncome','CoapplicantIncome','LoanAmount', 'Loan_Amount_Term']
-  categorical_features: ['Gender', 'Married', 'Dependents', 'Education', 'Self_Employed', 'Property_Area', 'Credit_History']
-  target: Loan_Status
+  path: datasets/swiss_roll.csv
+  continuous_features: ['X', 'Y', 'Z']
+  categorical_features: []
+  target: output
 
-constraints_file: config/constraints_homeloan_ch.json
+constraints_file: config/constraints_conf_swiss_roll.json
 output_folder: results
 
 model:
@@ -15,17 +15,17 @@ model:
   name: LogisticRegression
   path: models/homeloan_logistic_model.pkl
   categorical_features_encoding: label_encoder # Possible values: [onehot, label_encoder, frequency]
-  continuous_features_normalization: standard # Possible values: [minmax, standard]
+  continuous_features_normalization: none # Possible values: [minmax, standard, none]
 
 cfsearch:
   optimizer: genetic # Possible values: [random, CPLEX, genetic], currently supported genetic
   loss_type: hinge
   continuous_distance:
-    type: diffusion # Possible values: [weighted_l1, diffusion]
+    type: weighted_l1 # Possible values: [weighted_l1, diffusion, pydiffmap]
     diffusion_params:
-      k_neighbors: 8  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
+      k_neighbors: 20  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
       alpha: 1 # how many dimensions or features of the diffusion space you want to consider
-      diffusion_normalization: True # standard
+      diffusion_normalization: False # standard
     weighted_l1_params:
       weights: [1, 1, 1, 1]
   categorical_distance: hamming # l1
@@ -37,5 +37,5 @@ cfsearch:
   coherence: True # False # True
   search_normalization: False # standard
   search_encoding: False # frequency
-  objective_function_weights: [0.5, 0.5, 0.5] # loss, distance, coherence TODO add sparsity
+  objective_function_weights: [1, 2, 0] # loss, distance, coherence TODO add sparsity
   feature_weights: False

@@ -15,6 +15,10 @@
             "dependencyType": "monotonic_dependency",
             "root": "LoanAmount",
             "child": "Loan_Amount_Term"
-        }
+        },
+        "CoapplicantIncome": {
+                "type": "permitted_range",
+                "range": [0,1000]
+            }
     }
 }

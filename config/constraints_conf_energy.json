@@ -1,4 +1,10 @@
 {
     "features": {
+        "active_electricity_8":  {
+            "type": "immutable"
+        },
+        "outdoor_temperature": {
+            "type": "immutable"
+        }
     }
 }

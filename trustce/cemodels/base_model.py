@@ -57,4 +57,6 @@ class BaseModel(ModelInterface):
         Predict instance
         """
         warnings.filterwarnings(action='ignore', category=UserWarning)
-        return self.predict_proba(x.to_numpy_array().reshape(1, -1))[0]
+        instance = x.to_numpy_array().reshape(1, -1)
+        full_proba = self.predict_proba(instance)
+        return full_proba[0]

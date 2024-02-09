@@ -1,6 +1,10 @@
 import random
+import numpy as np
 from copy import copy, deepcopy
-from trustce.ceinstance.instance_sampler import ImmutableSampler
+from scipy.spatial import distance_matrix
+from scipy.linalg import eigh
+import scipy.sparse.linalg as spsl
+from trustce.ceinstance.instance_sampler import ImmutableSampler, PermittedRangeSampler
 
 # TODO: make Optimizer parent class and implement genetic optimizer as child class
 class GeneticOptimizer():
@@ -24,12 +28,19 @@ class GeneticOptimizer():
         """Calculate fitness function which consist of loss function and distance function"""
         # calculate loss function depending on task classification or regression
         loss = 0
-        if self.loss_type == "hinge_loss":
-            original_prediction = self.model.predict_instance(query_instance)
-            counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
-            # TODO: take into consideration that predicitons might be not normalized
-            # TODO: add loss function for regression
-            loss = max(0, 1 - desired_output * counterfactual_prediction)
+        if self.loss_type == "hinge":
+            # if prediction is flipped set the term to be one, if not account for probabilities
+            prediction = self.model.predict_instance(counterfactual_instance)
+            # if desired output is not array
+            if prediction == desired_output:
+                loss = 0
+            else:
+                # If desired_output is array
+                #full_prediction = self.model.predict_proba_instance(counterfactual_instance)
+                #counterfactual_prediction = full_prediction[desired_output[0]]
+                counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
+                # TODO: take into consideration that predicitons might be not normalized
+                loss = max(0, 1 - desired_output * counterfactual_prediction)
         elif self.loss_type == "MSE":
             original_prediction = self.model.predict_instance(query_instance)
             counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
@@ -59,8 +70,82 @@ class GeneticOptimizer():
                 distance_continuous += abs(query_instance.features[feature_name].value - counterfactual_instance.features[feature_name].value)/self.mads[feature_name]
             if len(self.transformer.continuous_features_transformers) > 0:
                 distance_continuous = distance_continuous/self.transformer.get_cont_transformers_length()
-        elif self.distance_continuous["type"] == "diffusion_map":
-            pass
+        elif self.distance_continuous["type"] == "diffusion":
+            from scipy.spatial import distance
+            import numpy as np
+
+            distance_continuous = 0
+            # Get only continuous features
+            # transform the original point to diffusion space
+            is_norm = self.distance_continuous["diffusion_params"]["diffusion_normalization"]
+            if is_norm:
+                point = self.transformer.get_normed_numerical(query_instance)
+            else:   
+                point = query_instance.get_numerical_features_values()
+            point = np.array(point).reshape(1, -1)
+            # transform the counterfactual point to diffusion space
+            if is_norm:
+                counterfactual = self.transformer.get_normed_numerical(counterfactual_instance)
+            else:
+                counterfactual = counterfactual_instance.get_numerical_features_values()
+            counterfactual = np.array(counterfactual).reshape(1, -1)
+
+            point_transformed = self.transformer.diffusion_map.transform(point)
+            counterfactual_transformed = self.transformer.diffusion_map.transform(counterfactual)
+            # Calculate the Euclidean distance between the point and the counterfactuals
+            diff_distance = np.linalg.norm(counterfactual_transformed - point_transformed)
+            distance_continuous = diff_distance
+
+        elif self.distance_continuous["type"] == "pydiffmap":
+            distance_continuous = self.pydiffmap_distance(query_instance, counterfactual_instance)
+
+        elif self.distance_continuous["type"] == "comparison":
+            import numpy as np
+
+            is_norm = self.distance_continuous["diffusion_params"]["diffusion_normalization"]
+            if is_norm:
+                point = self.transformer.get_normed_numerical(query_instance)
+            else:   
+                point = query_instance.get_numerical_features_values()
+
+            # A test to confirm if distance makes sense
+            # One side of class
+            comparison_point_closest = [0.75, 0.04, -1.52]
+            pydiff_cl1_closest = self.pydiffmap_distance(query_instance, comparison_point_closest)
+            custom_cl1_closest = self.recalculate_diffusion_map(point, np.array(comparison_point_closest).reshape(1, -1))
+            print("pydiffmap distance for closest point: ", pydiff_cl1_closest)
+            print("custom distance for closest point: ", custom_cl1_closest)
+            comparison_point_further = [0.04, -0.04, -2.11]
+            pydiff_cl1_further = self.pydiffmap_distance(query_instance, comparison_point_further)
+            custom_cl1_further = self.recalculate_diffusion_map(point, np.array(comparison_point_further).reshape(1, -1))
+            print("pydiffmap distance for further point: ", pydiff_cl1_further)
+            print("custom distance for further point: ", custom_cl1_further)
+            comparison_point_the_most = [-1.09, 0.05, -1.02]
+            pydiff_cl1_the_most = self.pydiffmap_distance(query_instance, comparison_point_the_most)
+            custom_cl1_the_most = self.recalculate_diffusion_map(point, np.array(comparison_point_the_most).reshape(1, -1))
+            print("pydiffmap distance for the most point: ", pydiff_cl1_the_most)
+            print("custom distance for the most point: ", custom_cl1_the_most)
+
+            #Other side of class
+            comparison_point_closest2 = [-0.86, 0.39, 1.58]
+            pydiff_cl2_closest = self.pydiffmap_distance(query_instance, comparison_point_closest2)
+            custom_cl2_closest = self.recalculate_diffusion_map(point, np.array(comparison_point_closest2).reshape(1, -1))
+            print("pydiffmap distance for closest point: ", pydiff_cl2_closest)
+            print("custom distance for closest point: ", custom_cl2_closest)
+
+            comparison_point_further2 = [0.04, 0.19, 1.89]
+            pydiff_cl2_further = self.pydiffmap_distance(query_instance, comparison_point_further2)
+            custom_cl2_further = self.recalculate_diffusion_map(point, np.array(comparison_point_further2).reshape(1, -1))
+            print("pydiffmap distance for further point: ", pydiff_cl2_further)
+            print("custom distance for further point: ", custom_cl2_further)
+            comparison_point_the_most2 = [1.12, 0.20, 1.15]
+            pydiff_cl2_the_most = self.pydiffmap_distance(query_instance, comparison_point_the_most2)
+            custom_cl2_the_most = self.recalculate_diffusion_map(point, np.array(comparison_point_the_most2).reshape(1, -1))
+            print("pydiffmap distance for the most point: ", pydiff_cl2_the_most)
+            print("custom distance for the most point: ", custom_cl2_the_most)
+            print("End of experiment")
+            print("-----------------------------------")
+
 
         distance_categorical = 0
         if self.distance_categorical == "hamming":
@@ -70,7 +155,7 @@ class GeneticOptimizer():
                 distance_categorical += query_instance.features[feature_name].value != counterfactual_instance.features[feature_name].value
             if len(self.transformer.categorical_features_transformers) > 0:
                 distance_continuous = distance_continuous/self.transformer.get_cat_transformers_length()
-        distance = distance_continuous + distance_categorical
+        distance_combined = distance_continuous + distance_categorical
         elastic_net_penalty_approx = 0
         if self.sparsity_penalty == "elastic_net":
             epsilon = 1e-5
@@ -118,14 +203,45 @@ class GeneticOptimizer():
             # check if changed features are coherent with prediction direciton
         # calculate fitness function
         # TODO: normalize distance and loss
-        fitness = self.hyperparameters[0]*loss + self.hyperparameters[1]*distance + self.hyperparameters[2]*coherence + elastic_net_penalty_approx
-        return fitness
+        fitness = 10*self.hyperparameters[0]*loss + self.hyperparameters[1]*distance_combined + self.hyperparameters[2]*coherence + elastic_net_penalty_approx
+        return fitness, loss, distance_combined
+
+    
+    def pydiffmap_distance(self, query_instance, counterfactual_instance):
+        """Calculate distance using pydiffmap"""
+        point = query_instance.get_numerical_features_values()
+        point = np.array(point).reshape(1, -1)
+        original_point = self.transformer.diffusion_map.transform(point)
+
+        #counterfactual = counterfactual_instance.get_numerical_features_values()
+        counterfactual = np.array(counterfactual_instance).reshape(1, -1)
+        counterfactual_point = self.transformer.diffusion_map.transform(counterfactual)
+
+
+        # Calculate the Euclidean distance between the point and the counterfactuals
+        diff_distance = np.linalg.norm(counterfactual_point - original_point)
+        return diff_distance
+    
+    def recalculate_diffusion_map(self, original_point, new_point):
+        """Recalculate diffusion map with new point"""
+        original_point_projection = self.transformer.diffusion_map.transform(original_point)
+        new_point_projection = self.transformer.diffusion_map.transform(new_point)
+        diff_distance = np.linalg.norm(new_point_projection - original_point_projection)
+        return diff_distance
+    
+    def project_point_to_diffusion_space(self, new_point):
+        distances = np.sqrt(np.sum((self.transformer.normlaize_cont_dataset_numpy - new_point)**2, axis=1))
+        local_scale_new_point = np.sort(distances)[self.k]
+        affinity = np.exp(-distances ** 2 / (self.local_scale * local_scale_new_point))
+        affinity /= affinity.sum()
+        projection = (self.eigenvectors * (self.eigenvalues**self.alpha)).T @ affinity
+        return projection
 
     def generate_population(self, query_instance, population_size):
         """Initialize the populationg following sampling strategy"""
         # initialize population
         population = []
-        counterfactual_instance = copy(query_instance)
+        counterfactual_instance = deepcopy(query_instance)
 
         # generate population
         for i in range(population_size):
@@ -177,15 +293,23 @@ class GeneticOptimizer():
         feature_names = [feature_name for feature_name in feature_names if not isinstance(self.instance_sampler.feature_samplers[feature_name], ImmutableSampler)]
         # Select random feature for mutation
         mutation_key = random.choice(feature_names)
-
-        if mutation_key in self.transformer.continuous_features_transformers:
-            # Apply the mutation function to the selected feature's value
-            original_value = mutated_instance.features[mutation_key].value
-            mutated_instance.features[mutation_key].value = self.cont_mutation_function(original_value)
-        elif mutation_key in self.transformer.categorical_features_transformers:
-            # Apply the mutation function to the selected feature's value
-            original_value = mutated_instance.features[mutation_key].value
-            mutated_instance.features[mutation_key].value = self.cat_mutation_function(original_value, mutation_key)
+        if isinstance(self.instance_sampler.feature_samplers[mutation_key], PermittedRangeSampler):
+            if mutation_key in self.transformer.continuous_features_transformers:
+                # Apply the mutation function to the selected feature's value
+                original_value = mutated_instance.features[mutation_key].value
+                if self.cont_mutation_function(original_value) in self.instance_sampler.feature_samplers[mutation_key].permitted_range:
+                    mutated_instance.features[mutation_key].value = self.cont_mutation_function(original_value)
+                else:
+                    mutated_instance.features[mutation_key].value = random.choice(self.instance_sampler.feature_samplers[mutation_key].permitted_range)
+        else:
+            if mutation_key in self.transformer.continuous_features_transformers:
+                # Apply the mutation function to the selected feature's value
+                original_value = mutated_instance.features[mutation_key].value
+                mutated_instance.features[mutation_key].value = self.cont_mutation_function(original_value)
+            elif mutation_key in self.transformer.categorical_features_transformers:
+                # Apply the mutation function to the selected feature's value
+                original_value = mutated_instance.features[mutation_key].value
+                mutated_instance.features[mutation_key].value = self.cat_mutation_function(original_value, mutation_key)
 
         return mutated_instance
     
@@ -210,18 +334,23 @@ class GeneticOptimizer():
         """Evaluate the population by calculating fitness function"""
         # evaluate population
         fitness = []
+        loss = []
+        distance_combined = []
         for i in range(len(population)):
-            fitness.append(self.fitness_function(population[i], query_instance, desired_output))
-        return fitness
+            fitness_curr, loss_curr, distance_curr = self.fitness_function(population[i], query_instance, desired_output)
+            fitness.append(fitness_curr)
+            loss.append(loss_curr)
+            distance_combined.append(distance_curr)
+        return fitness, loss, distance_combined
 
-    def sort_population(self, population, fitness_list):
+    def sort_population(self, population, fitness_list, loss_list, distance_combined_list):
         """Sort the population by fitness function"""
         # sort population according to fitness list
-        paired_population = zip(population, fitness_list)      
+        paired_population = zip(population, fitness_list, loss_list, distance_combined_list)      
         sorted_population = sorted(paired_population, key=lambda x: x[1])
-        sorted_population, sorted_fitness_values = zip(*sorted_population)
+        sorted_population, sorted_fitness_values, sorted_loss, sorted_distance = zip(*sorted_population)
     
-        return list(sorted_population), list(sorted_fitness_values)
+        return list(sorted_population), list(sorted_fitness_values), list(sorted_loss), list(sorted_distance)
 
     def select_population(self, population, population_size):
         """Select the population by truncation"""
@@ -265,12 +394,27 @@ class GeneticOptimizer():
         else:
             return False
         
+    def calculate_population_diversity(self, population):
+        # Example: Calculate diversity based on feature variance
+        feature_values = [individual.get_values_dict() for individual in population]
+        # Assuming the features are numerical
+        feature_matrix = np.array([[values[feature] for feature in values] for values in feature_values])
+        diversity = np.var(feature_matrix)
+        return diversity
+
+    def adjust_mutation_rate(self, current_rate, diversity, min_rate, max_rate):
+        threshold_diversity = 0.5
+        if diversity < threshold_diversity:
+            return min(current_rate * 1.1, max_rate)  # Increase mutation rate
+        else:
+            return max(current_rate * 0.9, min_rate)  # Decrease mutation rate
+        
     
 
     def find_counterfactuals(self, query_instance, number_cf, desired_output, maxiterations):
         """Find counterfactuals by generating them through genetic algorithm"""
         # population size might be parameter or depend on number cf required
-        population_size = 10*number_cf
+        population_size = 40*number_cf
         # prepare data instance to format and transform categorical features
         # Normalization is happening one level above
         #self.transformer.normalize_instance(query_instance)
@@ -280,23 +424,30 @@ class GeneticOptimizer():
         self.counterfactuals = []
         iterations = 0
         fitness_history = []
+        loss_history = []
+        diff_distance_history = []
         best_candidates_history = []
-        t = 1e-2
+        t = 1e-4
         stop_count = 0
         self.population = self.generate_population(query_instance, population_size)
-        fitness_list = self.evaluate_population(self.population, query_instance, desired_output)
+        fitness_list, loss, distance_combined = self.evaluate_population(self.population, query_instance, desired_output)
         
         # Sorting didn't work properly
-        self.population, fitness_list = self.sort_population(self.population, fitness_list)
+        self.population, fitness_list, loss, distance_combined = self.sort_population(self.population, fitness_list, loss, distance_combined)
         fitness_history.append(fitness_list[0])
+        loss_history.append(loss[0])
+        diff_distance_history.append(distance_combined[0])
         best_candidates_history.append(self.population[0]) 
+
+        min_mutation_rate, max_mutation_rate = 0.1, 0.9
+        mutation_rate = 0.5
 
         # until the stopping criteria is reached
         while iterations < maxiterations and len(self.counterfactuals) < number_cf:
             # if fitness is not improving for 5 generation break
             if len(fitness_history) > 1 and abs(fitness_history[-2] - fitness_history[-1]) <= t and self.check_prediction_all(self.population[:number_cf], desired_output):
                 stop_count += 1
-            if stop_count > 4:
+            if stop_count > 50:
                 break
             # predict and compare to desired output
             # Select 50% of the best individuals, crossover the rest
@@ -310,17 +461,23 @@ class GeneticOptimizer():
             self.population = top_individuals + children
             # For debugging
             # mutate with probability of mutation Maybe decrease mutation within convergence
+            # In your main GA loop
+            diversity = self.calculate_population_diversity(self.population)
+            mutation_rate = self.adjust_mutation_rate(mutation_rate, diversity, min_mutation_rate, max_mutation_rate)
+
             for i in range(len(self.population)):
                 # If the mutation probability is greater than a random number, mutate
-                if random.random() < 0.5:
+                if random.random() < mutation_rate:
                     self.population[i] = self.mutate(self.population[i])
-            fitness_list = self.evaluate_population(self.population, query_instance, desired_output)
-            self.population, fitness_list = self.sort_population(self.population, fitness_list)
+            fitness_list, loss, distance_combined = self.evaluate_population(self.population, query_instance, desired_output)
+            self.population, fitness_list, loss, distance_combined = self.sort_population(self.population, fitness_list, loss, distance_combined)
             fitness_history.append(fitness_list[0])
+            loss_history.append(loss[0])
+            diff_distance_history.append(distance_combined[0])
             best_candidates_history.append(self.population[0])
 
             iterations += 1
 
         self.counterfactuals = self.population[:number_cf]
 
-        return self.counterfactuals
+        return self.counterfactuals, best_candidates_history, fitness_history, loss_history, diff_distance_history

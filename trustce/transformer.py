@@ -3,13 +3,15 @@ from scipy.spatial import distance_matrix
 from scipy.linalg import eigh
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import LabelEncoder
+from trustce.ceutils.diffusion import STDiffusionMap
 
 class Transformer(object):
     def __init__(self, dataset, config):
         self.continuous_features_transformers = self.get_cont_features_transformers(dataset, config)
         self.categorical_features_transformers = self.get_cat_features_transformers(dataset, config)
         if config.get_config_value("cfsearch")["continuous_distance"]["type"]=="diffusion":
-            dataset.data[dataset.continuous_features_list] = (dataset.data[dataset.continuous_features_list] - dataset.data[dataset.continuous_features_list].mean()) / dataset.data[dataset.continuous_features_list].std()
+            # for some reason there was another normalization
+            #dataset.data[dataset.continuous_features_list] = (dataset.data[dataset.continuous_features_list] - dataset.data[dataset.continuous_features_list].mean()) / dataset.data[dataset.continuous_features_list].std()
             if config.get_config_value("cfsearch")["continuous_distance"]["diffusion_params"]["diffusion_normalization"]:
                 from sklearn.preprocessing import StandardScaler
                 self.scaler = StandardScaler()
@@ -20,7 +22,19 @@ class Transformer(object):
                 self.normlaize_cont_dataset_numpy = dataset.data[dataset.continuous_features_list].to_numpy()
             self.k_neighbors = config.get_config_value("cfsearch")["continuous_distance"]["diffusion_params"]["k_neighbors"]
             self.alpha = config.get_config_value("cfsearch")["continuous_distance"]["diffusion_params"]["alpha"]
-            self.diffusion_map, self.local_scale, self.eigenvalues, self.eigenvectors = self.custom_diff_map(k_neighbors=self.k_neighbors, 
+            self.diffusion_map = STDiffusionMap(self.k_neighbors, self.alpha)
+            self.diffusion_map.fit(self.normlaize_cont_dataset_numpy)
+            #self.diffusion_map, self.local_scale, self.eigenvalues, self.eigenvectors = self.custom_diff_map(k_neighbors=self.k_neighbors, 
+                                                      #alpha=self.alpha)
+        elif config.get_config_value("cfsearch")["continuous_distance"]["type"]=="pydiffmap":
+            self.normlaize_cont_dataset_numpy = dataset.data[dataset.continuous_features_list].to_numpy()
+            self.diffusion_map = self._get_diffusion_map()
+        elif config.get_config_value("cfsearch")["continuous_distance"]["type"]=="comparison":
+            self.normlaize_cont_dataset_numpy = dataset.data[dataset.continuous_features_list].to_numpy()
+            self.diffusion_map = self._get_diffusion_map()
+            self.k_neighbors = config.get_config_value("cfsearch")["continuous_distance"]["diffusion_params"]["k_neighbors"]
+            self.alpha = config.get_config_value("cfsearch")["continuous_distance"]["diffusion_params"]["alpha"]
+            self.diffusion_map_custom, self.local_scale, self.eigenvalues, self.eigenvectors = self.custom_diff_map(k_neighbors=self.k_neighbors, 
                                                       alpha=self.alpha)
         self.mads = self._get_mads(dataset)
 
@@ -67,18 +81,17 @@ class Transformer(object):
             else:
                 raise ValueError("Feature name is not in continuous or categorical features list")
 
-    def _get_diffusion_map(self, dataset, kernel_size=6, n_eigenvecs=3):
+    def _get_diffusion_map(self, kernel_size=6, n_eigenvecs=3):
         """Calulate diffusion map fo coninuous features with gaussian kernel"""
         from pydiffmap import diffusion_map
         from pydiffmap import kernel
 
         # Normalize data
-        dataset.data[dataset.continuous_features_list] = (dataset.data[dataset.continuous_features_list] - dataset.data[dataset.continuous_features_list].mean()) / dataset.data[dataset.continuous_features_list].std()
+        #dataset.data[dataset.continuous_features_list] = (dataset.data[dataset.continuous_features_list] - dataset.data[dataset.continuous_features_list].mean()) / dataset.data[dataset.continuous_features_list].std()
 
         # Computer median pairwise distance for kernel_size epsilon reference. 
-        distances = distance_matrix(dataset.data[dataset.continuous_features_list].to_numpy(), dataset.data[dataset.continuous_features_list].to_numpy())
+        distances = distance_matrix(self.normlaize_cont_dataset_numpy, self.normlaize_cont_dataset_numpy)
         kernel_size_estimate = np.median(distances)
-        print("Kernel size estimate: ", kernel_size_estimate)
 
         # Estimate eigenvalues
         # Construct the affinity matrix using the Gaussian kernel
@@ -99,17 +112,15 @@ class Transformer(object):
         eigenvectors = eigenvectors[:, ::-1]
 
         eigenvalues[:10]  # Displaying the top 10 eigenvalues
-        print("Top eigenvalues: ", eigenvalues[:10]) # look for significant drop in eigenvalues
+        # look for significant drop in eigenvalues
 
         # Get only continuous features
-        shape = dataset.data[dataset.continuous_features_list].to_numpy()
-
-        max_number_eigenvalues = (len(shape) - 1)//2
+        max_number_eigenvalues = (len(self.normlaize_cont_dataset_numpy) - 1)//2
 
         kernel_gaussian = kernel.Kernel(kernel_type='gaussian', k=kernel_size, neighbor_params={'n_jobs': -1, 'algorithm': 'ball_tree'})
         diff_map = diffusion_map.DiffusionMap(kernel_gaussian, n_evecs=max_number_eigenvalues)
         # Fit the whole data. I should write my own diffusion map class to fit only on training data to debug where the problem is
-        diff_map.fit(shape)
+        diff_map.fit(self.normlaize_cont_dataset_numpy)
 
         return diff_map
 

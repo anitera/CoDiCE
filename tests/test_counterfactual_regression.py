@@ -145,8 +145,8 @@ class TestCFSearch(unittest.TestCase):
         self.search.evaluate_counterfactuals(target_instance, counterfacturals)
         # Visualise the values of counterfactuals and original instance only in jupyter notebook
         self.search.visualize_as_dataframe(target_instance, counterfacturals)
-        self.search.store_counterfactuals(self.config.get_config_value("output_folder"), "energy_test1")
-        self.search.store_evaluations(self.config.get_config_value("output_folder"), "energy_eval1")      
+        self.search.store_counterfactuals(self.config.get_config_value("output_folder"), "energy_test2")
+        self.search.store_evaluations(self.config.get_config_value("output_folder"), "energy_eval2")      
 
 
 def sample_rule_based_functions(target_val):

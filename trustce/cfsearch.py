@@ -89,9 +89,6 @@ class CFsearch:
         self.diffusion_map = None
         if self.distance_continuous["type"] == "diffusion":
             self.diffusion_map = self.transformer.diffusion_map
-            self.local_scale = self.transformer.local_scale
-            self.eigenvalues = self.transformer.eigenvalues
-            self.eigenvectors = self.transformer.eigenvectors
             self.k = self.transformer.k_neighbors
             self.alpha = self.transformer.alpha
         self.mads = self.transformer.mads
@@ -111,7 +108,7 @@ class CFsearch:
         else:
             self.desired_output = desired_class
         
-        self.counterfactual_instances = self.optimizer.find_counterfactuals(self.query_instance, number_cf, self.desired_output, maxiterations)
+        self.counterfactual_instances, self.best_candidates, self.fitnes_history, self.loss_history, self.distance_history = self.optimizer.find_counterfactuals(self.query_instance, number_cf, self.desired_output, maxiterations)
         self.new_outcome = []
         # Check validity
         # Checking if we have valid counterfactuals
@@ -144,6 +141,13 @@ class CFsearch:
         else:
             return self.counterfactual_instances
         '''
+
+    def draw_trace_search(self):
+        """Draw the trace of search"""
+        array_candidates_values = []
+        for candidate in self.best_candidates:
+            array_candidates_values.append(candidate.get_list_of_features_values())
+        return array_candidates_values, self.fitnes_history, self.loss_history, self.distance_history
     
     def round_modified_values(self, original_instance, counterfactual_instance, decimal_places=0):
         """Round only the modified values in the counterfactual instance."""
@@ -227,7 +231,6 @@ class CFsearch:
             else:   
                 point = original_instance.get_numerical_features_values()
             point = np.array(point).reshape(1, -1)
-            point_diffusion = self.project_point_to_diffusion_space(point)
 
             # transform the counterfactual point to diffusion space
             if is_norm:
@@ -235,11 +238,13 @@ class CFsearch:
             else:
                 counterfactual = counterfactual_instance.get_numerical_features_values()
             counterfactual = np.array(counterfactual).reshape(1, -1)
-            counterfactual_diffusion = self.project_point_to_diffusion_space(counterfactual)
+            
 
+            point_transformed = self.transformer.diffusion_map.transform(point)
+            counterfactual_transformed = self.transformer.diffusion_map.transform(counterfactual)
             # Calculate the Euclidean distance between the point and the counterfactuals
-            euc_distance = np.linalg.norm(counterfactual_diffusion - point_diffusion)
-            distance_continuous = euc_distance
+            diff_distance = np.linalg.norm(counterfactual_transformed - point_transformed)
+            distance_continuous = diff_distance
             
         return distance_continuous
     
@@ -365,6 +370,18 @@ class CFsearch:
             original_prediction = self.model.predict_proba_instance(original_instance)
             control_prediction = self.model.predict_proba_instance(control_instance)
             probability_sign = np.sign(control_prediction - original_prediction)
+            # I modified required_label to required_label[0] because it was a list of one element
+            # Debugging print statements
+            print(f"probability_sign: {probability_sign}, type: {type(probability_sign)}")
+            print(f"required_label: {required_label}, type: {type(required_label)}")
+
+            # Convert required_label to integer if it's a float
+            if isinstance(required_label, (list, np.ndarray)) and len(required_label) == 1:
+                required_label = int(required_label[0])
+
+            # Further debugging
+            print(f"Modified required_label: {required_label}, type: {type(required_label)}")
+
             return probability_sign[required_label]
         else:
             original_prediction = self.model.predict_instance(original_instance)

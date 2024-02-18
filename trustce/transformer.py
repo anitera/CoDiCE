@@ -239,7 +239,7 @@ class FeatureTransformer(object):
             # Calculate std for dataset[feature_name]
             standartised = (dataset.data[self.feature_name] - self.mean) / self.std
             return [standartised.min(), standartised.max()]
-        elif self.norm_type == "none":
+        elif self.norm_type == False:
             return self.original_range
         else:
             raise ValueError("Normalization type is not supported")

@@ -29,7 +29,7 @@ class TestCFSearch(unittest.TestCase):
         
 
     def test_cf_search(self):
-        load_datasets.download("homeloan")
+        #load_datasets.download("homeloan")
         self.data = Dataset(self.config.get_config_value("dataset"), "Loan_Status")
         self.normalization_transformer = Transformer(self.data, self.config)
         self.instance_factory = InstanceFactory(self.data)

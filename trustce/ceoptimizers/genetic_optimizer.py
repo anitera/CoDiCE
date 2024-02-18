@@ -297,7 +297,8 @@ class GeneticOptimizer():
             if mutation_key in self.transformer.continuous_features_transformers:
                 # Apply the mutation function to the selected feature's value
                 original_value = mutated_instance.features[mutation_key].value
-                if self.cont_mutation_function(original_value) in self.instance_sampler.feature_samplers[mutation_key].permitted_range:
+                mutated_value = self.cont_mutation_function(original_value)
+                if mutated_value in self.instance_sampler.feature_samplers[mutation_key].permitted_range:
                     mutated_instance.features[mutation_key].value = self.cont_mutation_function(original_value)
                 else:
                     mutated_instance.features[mutation_key].value = random.choice(self.instance_sampler.feature_samplers[mutation_key].permitted_range)
@@ -305,7 +306,12 @@ class GeneticOptimizer():
             if mutation_key in self.transformer.continuous_features_transformers:
                 # Apply the mutation function to the selected feature's value
                 original_value = mutated_instance.features[mutation_key].value
-                mutated_instance.features[mutation_key].value = self.cont_mutation_function(original_value)
+                mutated_value = self.cont_mutation_function(original_value)
+                # Check if mutated value is within feature's range
+                if mutated_value in self.instance_sampler.feature_samplers[mutation_key].feature_range:
+                    mutated_instance.features[mutation_key].value = mutated_value
+                else:
+                    mutated_instance.features[mutation_key].value = random.uniform(self.instance_sampler.feature_samplers[mutation_key].feature_range[0], self.instance_sampler.feature_samplers[mutation_key].feature_range[1])
             elif mutation_key in self.transformer.categorical_features_transformers:
                 # Apply the mutation function to the selected feature's value
                 original_value = mutated_instance.features[mutation_key].value

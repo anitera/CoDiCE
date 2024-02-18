@@ -44,9 +44,9 @@ class CFsearch:
         # Getting the number of counterfactuals
         number_cf = len(self.counterfactual_instances)
         # Unnormalize counterfactuals
-        for i in range(number_cf):
-            if self.counterfactual_instances[i].normalized:
-                self.transformer.denormalize_instance(self.counterfactual_instances[i])
+        #for i in range(number_cf):
+        #    if self.counterfactual_instances[i].normalized:
+        #        self.transformer.denormalize_instance(self.counterfactual_instances[i])
     
         # making filenames for every counterfactual
         for i in range(number_cf):
@@ -99,7 +99,7 @@ class CFsearch:
         """Find counterfactuals by generating them through genetic optimizer"""
         self.original_instance = query_instance
         self.query_instance = query_instance
-        self.transformer.normalize_instance(self.query_instance)
+        #self.transformer.normalize_instance(self.query_instance)
         self.original_instance_prediciton = self.model.predict_instance(self.query_instance)
         if desired_class == "opposite" and self.model.model_type == "classification":
             self.desired_output = 1 - self.original_instance_prediciton
@@ -450,8 +450,8 @@ class CFsearch:
 
         # original instance
         print('Query instance (original outcome : %i)' % self.original_instance_prediciton)
-        if self.query_instance.normalized:
-            self.transformer.denormalize_instance(self.query_instance)
+        #if self.query_instance.normalized:
+        #    self.transformer.denormalize_instance(self.query_instance)
         display(pd.DataFrame([self.query_instance.get_values_dict()]))  # works only in Jupyter notebook
         self._visualize_internal(target_instance, counterfactuals, show_only_changes=show_only_changes,
                                  is_notebook_console=True)
@@ -498,15 +498,15 @@ class CFsearch:
             if df[0].normalized:
                 newdf = []
                 for cf_instance in df:
-                    self.transformer.denormalize_instance(cf_instance)
+                    #self.transformer.denormalize_instance(cf_instance)
                     get_list_of_features_values = cf_instance.get_list_of_features_values()
                     newdf.append(get_list_of_features_values)
                 #newdf = [self.transformer.denormalize_instance(cf_instance).get_list_of_features_values() for cf_instance in df]
             else:
                 newdf = [cf_instance.get_list_of_features_values() for cf_instance in df]
             #org = self.test_instance_df.values.tolist()[0]
-            if self.original_instance.normalized:
-                self.transformer.denormalize_instance(self.original_instance) 
+            #if self.original_instance.normalized:
+            #    self.transformer.denormalize_instance(self.original_instance) 
             org = self.original_instance.get_list_of_features_values()
             for ix in range(len(df)):
                 for jx in range(len(org)):

@@ -1,6 +1,6 @@
 dataset:
   type: csv # or csv
-  path: datasets/diabetes_train.xls
+  path: datasets/diabetes.csv
   continuous_features: ['Number of times pregnant','Plasma glucose concentration a 2 hours in an oral glucose tolerance test','Diastolic blood pressure (mm Hg)','Triceps skin fold thickness (mm)','2-Hour serum insulin (mu U/ml)','Body mass index (weight in kg/(height in m)^2)','Diabetes pedigree function','Age (years)']
   categorical_features: []
   target: "Class variable"
@@ -15,20 +15,21 @@ model:
   name: LogisticRegression
   path: models/logistic_model_diabetes.pkl
   categorical_features_encoding: label_encoder # onehot # frequency
-  continuous_features_normalization: standard # minmax # standard
+  continuous_features_normalization: False #minmax # minmax # standard
 
 cfsearch:
-  optimizer: genetic #random #CPLEX
+  optimizer: genetic # Possible values: [random, CPLEX, genetic], currently supported genetic
   loss_type: hinge
   continuous_distance:
-    type: weighted_l1 #diffusion # weighted_l1?
+    type: diffusion # Possible values: [weighted_l1, diffusion]
     diffusion_params:
-      kernel_size: 1  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
-      number_of_eigenvectors: 25 # how many dimensions or features of the diffusion space you want to consider
+      k_neighbors: 12  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
+      alpha: 1 # how many dimensions or features of the diffusion space you want to consider
+      diffusion_normalization: False # standard
     weighted_l1_params:
       weights: [1, 1, 1, 1]
   categorical_distance: hamming # l1
-    sparsity_penalty: 
+  sparsity_penalty: 
     type: elastic_net
     alpha: 0.5
     beta: 0.5

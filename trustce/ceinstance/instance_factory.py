@@ -28,3 +28,6 @@ class InstanceFactory(object):
 
     def create_empty_instance(self):
         return CEInstance(self.instance_schema)
+
+    def create_instance_from_df_row(self, row):
+        return self.create_instance(row.to_dict())

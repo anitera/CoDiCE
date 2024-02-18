@@ -48,6 +48,7 @@ class TestCFSearch(unittest.TestCase):
 
         # Splitting the data into training and testing sets
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
+        self._x_train = X_train
 
         # Optimized parameters
         C_optimized = 0.23357214690901212
@@ -141,6 +142,41 @@ class TestCFSearch(unittest.TestCase):
         self.search.visualize_as_dataframe(target_instance, counterfacturals)
         self.search.store_counterfactuals(self.config.get_config_value("output_folder"), "diab_3euc")
         self.search.store_evaluations(self.config.get_config_value("output_folder"), "diab_3euc")      
+
+    
+    def test_cf_search_for_train(self):
+        self.data = Dataset(self.config.get_config_value("dataset"), "Class variable")
+        self.normalization_transformer = Transformer(self.data, self.config)
+        self.instance_factory = InstanceFactory(self.data)
+
+        #custom_rules = {"coapplicantRule": sample_rule_based_functions}
+
+        self.sampler = CEInstanceSampler(self.config, self.normalization_transformer, self.instance_factory)
+
+        self.model = BaseModel(self.config.get_config_value("model"), self.model_pipeline)
+        config_for_cfsearch = self.config.get_config_value("cfsearch")
+        self.search = CFsearch(self.normalization_transformer, self.model, self.sampler, 
+                               config=self.config,
+                               optimizer_name=config_for_cfsearch["optimizer"], 
+                               distance_continuous=config_for_cfsearch["continuous_distance"], 
+                               distance_categorical=config_for_cfsearch["categorical_distance"], 
+                               loss_type=config_for_cfsearch["loss_type"],
+                               sparsity_penalty=config_for_cfsearch["sparsity_penalty"]["type"],
+                               alpha=config_for_cfsearch["sparsity_penalty"]["alpha"],
+                               beta=config_for_cfsearch["sparsity_penalty"]["beta"], 
+                               coherence=config_for_cfsearch["coherence"],
+                               objective_function_weights=config_for_cfsearch["objective_function_weights"])
+
+        all_counterfactuals = self._x_train.copy()
+        for idx, row_instance in self._x_train.iterrows():
+            target_instance = self.instance_factory.create_instance_from_df_row(row_instance)
+            counterfactuals = self.search.find_counterfactuals(target_instance, 1, "opposite", 100)
+            all_counterfactuals.loc[idx] = pd.Series(counterfactuals[0].get_values_dict())
+
+        
+        self._x_train.to_csv("results/original_diabetes_train.csv", index=False)
+        all_counterfactuals.to_csv("results/counterfactuals_diabetes_train.csv", index=False)
+        
 
 
 def sample_rule_based_functions(target_val):

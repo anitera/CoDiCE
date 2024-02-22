@@ -25,17 +25,13 @@ cfsearch:
     diffusion_params:
       k_neighbors: 12  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
       alpha: 1 # how many dimensions or features of the diffusion space you want to consider
-      diffusion_normalization: False # standard
+      diffusion_normalization: standard # standard Possible values: [standard, False]
     weighted_l1_params:
       weights: [1, 1, 1, 1]
   categorical_distance: hamming # l1
-  sparsity_penalty: 
-    type: elastic_net
-    alpha: 0.5
-    beta: 0.5
-  sparsity: False # True
-  coherence: True # False # True
+  sparsity: True # Possible values: [True, False]
+  coherence: True # Possible values: [True, False]
   search_normalization: False # standart
   search_encoding: False # frequency
-  objective_function_weights: [0.5, 0.5, 0.5] # loss, distance, coherence TODO add sparsity
+  objective_function_weights: [0.5, 0.5, 0.5] # weights for distance, sparsity, coherence penalties
   feature_weights: False

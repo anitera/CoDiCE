@@ -1,8 +1,8 @@
 dataset:
   type: csv # or csv
-  path: datasets/homeloan_train.xls
-  continuous_features: ['ApplicantIncome','CoapplicantIncome','LoanAmount', 'Loan_Amount_Term']
-  categorical_features: ['Gender', 'Married', 'Dependents', 'Education', 'Self_Employed', 'Property_Area', 'Credit_History']
+  path: datasets/homeloan_oredered_features.csv
+  continuous_features: ['ApplicantIncome','CoapplicantIncome','LoanAmount', 'Loan_Amount_Term', 'Credit_History']
+  categorical_features: ['Gender', 'Married', 'Dependents', 'Education', 'Self_Employed', 'Property_Area']
   target: Loan_Status
 
 constraints_file: config/constraints_homeloan_ch.json
@@ -14,28 +14,24 @@ model:
   state: pretrained
   name: LogisticRegression
   path: models/homeloan_logistic_model.pkl
-  categorical_features_encoding: label_encoder # Possible values: [onehot, label_encoder, frequency]
-  continuous_features_normalization: standard # Possible values: [minmax, standard]
+  categorical_features_encoding: False # Possible values: [onehot, label_encoder, frequency]
+  continuous_features_normalization: False # Possible values: [minmax, standard]
 
 cfsearch:
   optimizer: genetic # Possible values: [random, CPLEX, genetic], currently supported genetic
   loss_type: hinge
   continuous_distance:
-    type: diffusion # Possible values: [weighted_l1, diffusion]
+    type: weighted_l1 # Possible values: [weighted_l1, diffusion]
     diffusion_params:
       k_neighbors: 8  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
       alpha: 1 # how many dimensions or features of the diffusion space you want to consider
-      diffusion_normalization: True # standard
+      diffusion_normalization: False # standard
     weighted_l1_params:
       weights: [1, 1, 1, 1]
   categorical_distance: hamming # l1
-  sparsity_penalty: 
-    type: elastic_net
-    alpha: 0.5
-    beta: 0.5
-  sparsity: False # True
-  coherence: True # False # True
+  sparsity: True # Possible values: [True, False]
+  coherence: True # Possible values: [True, False]
   search_normalization: False # standard
   search_encoding: False # frequency
-  objective_function_weights: [0.5, 0.5, 0.5] # loss, distance, coherence TODO add sparsity
+  objective_function_weights: [0.5, 0, 0] # weights for distance, sparsity, coherence penalties
   feature_weights: False

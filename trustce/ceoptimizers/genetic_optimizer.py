@@ -8,7 +8,7 @@ from trustce.ceinstance.instance_sampler import ImmutableSampler, PermittedRange
 
 # TODO: make Optimizer parent class and implement genetic optimizer as child class
 class GeneticOptimizer():
-    def __init__(self, model, transformer, instance_sampler, distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", sparsity_penalty="elastic_net", alpha=0.5, beta=0.5, coherence=False, hyperparameters=[0.2, 0.2, 0.2], diffusion_map=None, mads=None):
+    def __init__(self, model, transformer, instance_sampler, distance_continuous="weighted_l1", distance_categorical="weighted_l1", loss_type="hinge_loss", sparsity=True, coherence=False, hyperparameters=[0.2, 0.2, 0.2], diffusion_map=None, mads=None):
         """Initialize data metaparmeters and model"""
         self.model = model
         self.transformer = transformer
@@ -16,9 +16,7 @@ class GeneticOptimizer():
         self.distance_categorical = distance_categorical
         self.loss_type = loss_type
         self.diffusion_map = diffusion_map
-        self.sparsity_penalty = sparsity_penalty
-        self.alpha = alpha
-        self.beta = beta
+        self.sparsity = sparsity
         self.coherence = coherence
         self.mads = mads
         self.hyperparameters = hyperparameters
@@ -30,37 +28,51 @@ class GeneticOptimizer():
         loss = 0
         if self.loss_type == "hinge":
             # if prediction is flipped set the term to be one, if not account for probabilities
-            prediction = self.model.predict_instance(counterfactual_instance)
+            #self.transformer.normalize_instance(counterfactual_instance)
+            counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
+            #self.transformer.denormalize_instance(counterfactual_instance)
             # if desired output is not array
-            if prediction == desired_output:
+            if counterfactual_prediction == desired_output:
                 loss = 0
             else:
                 # If desired_output is array
                 #full_prediction = self.model.predict_proba_instance(counterfactual_instance)
                 #counterfactual_prediction = full_prediction[desired_output[0]]
-                counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
                 # TODO: take into consideration that predicitons might be not normalized
                 loss = max(0, 1 - desired_output * counterfactual_prediction)
         elif self.loss_type == "MSE":
-            original_prediction = self.model.predict_instance(query_instance)
+            # if prediction is in desired output range set the term to 0, otherwise calculate the loss
+            #self.transformer.normalize_instance(counterfactual_instance)
             counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
-            loss_lower = (desired_output[0] - counterfactual_prediction)**2
-            loss_upper = (desired_output[1] - counterfactual_prediction)**2
-            loss = min(loss_lower, loss_upper)
+            #self.transformer.denormalize_instance(counterfactual_instance)
+            if desired_output[0] <= counterfactual_prediction <= desired_output[1]:
+                loss = 0
+            else:
+                loss_lower = (desired_output[0] - counterfactual_prediction)**2
+                loss_upper = (desired_output[1] - counterfactual_prediction)**2
+                loss = min(loss_lower, loss_upper)
         elif self.loss_type == "MAE":
-            original_prediction = self.model.predict_instance(query_instance)
+            #self.transformer.normalize_instance(counterfactual_instance)
             counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
-            loss_lower = abs(desired_output[0] - counterfactual_prediction)
-            loss_upper = abs(desired_output[1] - counterfactual_prediction)
-            loss = min(loss_lower, loss_upper)
+            #self.transformer.denormalize_instance(counterfactual_instance)
+            if desired_output[0] <= counterfactual_prediction <= desired_output[1]:
+                loss = 0
+            else:
+                loss_lower = abs(desired_output[0] - counterfactual_prediction)
+                loss_upper = abs(desired_output[1] - counterfactual_prediction)
+                loss = min(loss_lower, loss_upper)
         elif self.loss_type == "RMSE":
-            original_prediction = self.model.predict_instance(query_instance)
+            #self.transformer.normalize_instance(counterfactual_instance)
             counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
-            loss_lower = (desired_output[0] - counterfactual_prediction)**2
-            loss_lower = loss_lower**0.5
-            loss_upper = (desired_output[1] - counterfactual_prediction)**2
-            loss_upper = loss_upper**0.5
-            loss = min(loss_lower, loss_upper)
+            #self.transformer.denormalize_instance(counterfactual_instance)
+            if desired_output[0] <= counterfactual_prediction <= desired_output[1]:
+                loss = 0
+            else:
+                loss_lower = (desired_output[0] - counterfactual_prediction)**2
+                loss_lower = loss_lower**0.5
+                loss_upper = (desired_output[1] - counterfactual_prediction)**2
+                loss_upper = loss_upper**0.5
+                loss = min(loss_lower, loss_upper)
         # calculate distance function depending on distance type
         distance_continuous = 0
         if self.distance_continuous["type"] == "weighted_l1":
@@ -99,7 +111,7 @@ class GeneticOptimizer():
         elif self.distance_continuous["type"] == "pydiffmap":
             distance_continuous = self.pydiffmap_distance(query_instance, counterfactual_instance)
 
-        elif self.distance_continuous["type"] == "comparison":
+        """elif self.distance_continuous["type"] == "comparison":
             import numpy as np
 
             is_norm = self.distance_continuous["diffusion_params"]["diffusion_normalization"]
@@ -144,7 +156,7 @@ class GeneticOptimizer():
             print("pydiffmap distance for the most point: ", pydiff_cl2_the_most)
             print("custom distance for the most point: ", custom_cl2_the_most)
             print("End of experiment")
-            print("-----------------------------------")
+            print("-----------------------------------")"""
 
 
         distance_categorical = 0
@@ -156,54 +168,25 @@ class GeneticOptimizer():
             if len(self.transformer.categorical_features_transformers) > 0:
                 distance_continuous = distance_continuous/self.transformer.get_cat_transformers_length()
         distance_combined = distance_continuous + distance_categorical
-        elastic_net_penalty_approx = 0
-        if self.sparsity_penalty == "elastic_net":
-            epsilon = 1e-5
-            l1_penalty_approx = 0
-            l2_penalty_approx = 0
-            # check if changed features are sparse
 
-            base_prediction = self.model.predict_instance(counterfactual_instance)
+        sparsity_penalty = 0
+        # Calculate the sparsity penalty
+        if self.sparsity:
+            for feature_name in counterfactual_instance.features:
+                if counterfactual_instance.features[feature_name].value != query_instance.features[feature_name].value:
+                    sparsity_penalty += 1  # Increment for each changed feature
 
-            for feature_name in self.transformer.continuous_features_transformers:
-                original_feature_value = counterfactual_instance.features[feature_name].value
-                # Continuous feature perturbation
-                counterfactual_instance.features[feature_name].value += epsilon
+            sparsity_penalty = sparsity_penalty / len(counterfactual_instance.features)
 
-                perturbed_prediction = self.model.predict_instance(counterfactual_instance)
-                
-                # Approximate derivative (importance)
-                derivative = abs(perturbed_prediction - base_prediction) / (epsilon if feature_name in self.transformer.continuous_features_transformers else 1)
-                l1_penalty_approx += derivative
-                l2_penalty_approx += derivative ** 2
-
-    
-            for feature_name in self.transformer.categorical_features_transformers:
-                original_feature_value = counterfactual_instance.features[feature_name].value
-                # Categorical feature perturbation - switch category
-                # Check the length of the category list
-                num_categories = len(self.transformer.categorical_features_transformers[feature_name].original_range)
-                counterfactual_instance.features[feature_name].value = (counterfactual_instance.features[feature_name].value + 1) % num_categories
-
-                perturbed_prediction = self.model.predict_instance(counterfactual_instance)
-                
-                # Approximate derivative (importance)
-                derivative = abs(perturbed_prediction - base_prediction) / (epsilon if feature_name in self.transformer.continuous_features_transformers else 1)
-                l1_penalty_approx += derivative
-                l2_penalty_approx += derivative ** 2
-                
-                # Reset feature value
-                counterfactual_instance.features[feature_name].value = original_feature_value
-
-            elastic_net_penalty_approx = self.beta * (self.alpha * l1_penalty_approx + (1 - self.alpha) * l2_penalty_approx)
-
-
+        coherence_penalty = 0
         if self.coherence:
-            coherence = 0
-            # check if changed features are coherent with prediction direciton
+            coherence_score, inconsistent_features = self.check_coherence(query_instance, counterfactual_instance, desired_output)
+            coherence_penalty = 1 - coherence_score
+            #print("Coherece score: ", coherence_score)
+            #print("Inconsistent features: ", inconsistent_features)
+
         # calculate fitness function
-        # TODO: normalize distance and loss
-        fitness = 10*self.hyperparameters[0]*loss + self.hyperparameters[1]*distance_combined + self.hyperparameters[2]*coherence + elastic_net_penalty_approx
+        fitness = 10*loss + self.hyperparameters[0]*(distance_continuous + 0.5*distance_categorical) + self.hyperparameters[1]*sparsity_penalty + self.hyperparameters[2]*coherence_penalty
         return fitness, loss, distance_combined
 
     
@@ -237,6 +220,61 @@ class GeneticOptimizer():
         projection = (self.eigenvectors * (self.eigenvalues**self.alpha)).T @ affinity
         return projection
 
+    def check_coherence(self, original_instance, counterfactual_instance, required_label):
+        """Simplified version"""    
+        #control_instance = copy.deepcopy(original_instance)
+        marginal_signs = {}
+        # Get the direction of prediction change for each feature
+        for feature_name in self.transformer.continuous_features_transformers:
+            marginal_signs[feature_name] = self.get_only_marginal_prediction_sign(original_instance, counterfactual_instance, feature_name, required_label)
+        for feature_name in self.transformer.categorical_features_transformers:
+            marginal_signs[feature_name] = self.get_only_marginal_prediction_sign(original_instance, counterfactual_instance, feature_name, required_label)
+        # Calculate how many minuses are in marginal_signs
+        coherence_counterfactual_score = sum(1 for key, value in marginal_signs.items() if value != -1)/len(marginal_signs)
+        uncoherent_suggestions = [key for key, value in marginal_signs.items() if value == -1]
+        return coherence_counterfactual_score, uncoherent_suggestions
+    
+    def get_only_marginal_prediction_sign(self, original_instance, counterfactual_instance, feature_name, required_label):
+        """This implementation is checking if current change leads to increase or decrease of the prediction"""
+        control_instance = deepcopy(original_instance)
+        original_instance_value = original_instance.features[feature_name].value
+        counterfactual_instance_value = counterfactual_instance.features[feature_name].value
+        #print("Feature {} changed its value from {} to {}".format(feature_name, original_instance.features[feature_name].value, counterfactual_instance.features[feature_name].value))
+        # Current prediction of original instance
+        # Let's change only counterfactual value of the feature
+        control_instance.features[feature_name].value = counterfactual_instance_value
+        # If it is classification
+        if self.model.model_type == "classification":
+            #self.transformer.normalize_instance(original_instance)
+            original_prediction = self.model.predict_proba_instance(original_instance)
+            #self.transformer.denormalize_instance(original_instance)
+            #self.transformer.normalize_instance(control_instance)
+            control_prediction = self.model.predict_proba_instance(control_instance)
+            #self.transformer.denormalize_instance(control_instance)
+            probability_sign = np.sign(control_prediction - original_prediction)
+            # I modified required_label to required_label[0] because it was a list of one element
+            # Debugging print statements
+            #print(f"probability_sign: {probability_sign}, type: {type(probability_sign)}")
+            #print(f"required_label: {required_label}, type: {type(required_label)}")
+
+            # Convert required_label to integer if it's a float
+            if isinstance(required_label, (list, np.ndarray)) and len(required_label) == 1:
+                required_label = int(required_label[0])
+
+            # Further debugging
+            #print(f"Modified required_label: {required_label}, type: {type(required_label)}")
+
+            return probability_sign[required_label]
+        else:
+            #self.transformer.normalize_instance(original_instance)
+            original_prediction = self.model.predict_instance(original_instance)
+            #self.transformer.denormalize_instance(original_instance)
+            #self.transformer.normalize_instance(control_instance)
+            control_prediction = self.model.predict_instance(control_instance)
+            #self.transformer.denormalize_instance(control_instance)
+            probability_sign = np.sign(control_prediction - original_prediction)
+            return probability_sign
+    
     def generate_population(self, query_instance, population_size):
         """Initialize the populationg following sampling strategy"""
         # initialize population
@@ -315,7 +353,8 @@ class GeneticOptimizer():
             elif mutation_key in self.transformer.categorical_features_transformers:
                 # Apply the mutation function to the selected feature's value
                 original_value = mutated_instance.features[mutation_key].value
-                mutated_instance.features[mutation_key].value = self.cat_mutation_function(original_value, mutation_key)
+                mutated_value = self.cat_mutation_function(original_value, mutation_key)
+                mutated_instance.features[mutation_key].value = mutated_value
 
         return mutated_instance
     
@@ -327,12 +366,18 @@ class GeneticOptimizer():
 
     def cat_mutation_function(self, fvalue, fname):
         """Mutation function for categorical features"""
-        range = self.transformer.categorical_features_transformers[fname].normalized_range
-        # random choice from frange excluding current value
-        while True:
-            mutation_value = random.randint(range[0], range[1])
-            if mutation_value != fvalue:
-                break
+        possible_values = self.transformer.categorical_features_transformers[fname].original_range
+
+        # If possible_values is a list of unique values (when self.enc_type == False)
+        if isinstance(possible_values, np.ndarray):
+            # Filter out the current value to ensure mutation
+            possible_mutations = [value for value in possible_values if value != fvalue]
+        else:
+            # Assuming possible_values is a numeric range [min, max] for other enc_types
+            possible_mutations = [value for value in range(possible_values[0], possible_values[1] + 1) if value != fvalue]
+
+        # Randomly select a new value from the remaining possible mutations
+        mutation_value = random.choice(possible_mutations)
 
         return mutation_value
 
@@ -368,13 +413,17 @@ class GeneticOptimizer():
         """Check if counterfactual instance is valid"""
         # check if counterfactual instance is valid
         if self.model.model_type == "classification":
+            #self.transformer.normalize_instance(counterfactual_instance)
             counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
+            #self.transformer.denormalize_instance(counterfactual_instance)
             if counterfactual_prediction == desired_output:
                 return True
             else:
                 return False
         elif self.model.model_type == "regression":
+            #self.transformer.normalize_instance(counterfactual_instance)
             counterfactual_prediction = self.model.predict_instance(counterfactual_instance)
+            #self.transformer.denormalize_instance(counterfactual_instance)
             if desired_output[0] <= counterfactual_prediction <= desired_output[1]:
                 return True
             else:
@@ -387,13 +436,17 @@ class GeneticOptimizer():
         # check if counterfactual instance is valid
         if self.model.model_type == "classification":
             for i in range(len(population)):
+                #self.transformer.normalize_instance(population[i])
                 counterfactual_prediction = self.model.predict_instance(population[i])
+                #self.transformer.denormalize_instance(population[i])
                 if counterfactual_prediction != desired_output:
                     return False
             return True
         elif self.model.model_type == "regression":
             for i in range(len(population)):
+                #self.transformer.normalize_instance(population[i])
                 counterfactual_prediction = self.model.predict_instance(population[i])
+                #self.transformer.denormalize_instance(population[i])
                 if not desired_output[0] <= counterfactual_prediction <= desired_output[1]:
                     return False
             return True
@@ -401,11 +454,13 @@ class GeneticOptimizer():
             return False
         
     def calculate_population_diversity(self, population):
+        continuous_feature_names = list(self.transformer.continuous_features_transformers.keys())
         # Example: Calculate diversity based on feature variance
         feature_values = [individual.get_values_dict() for individual in population]
-        # Assuming the features are numerical
-        feature_matrix = np.array([[values[feature] for feature in values] for values in feature_values])
-        diversity = np.var(feature_matrix)
+        # Assuming the continuous features are numerical
+        continuous_feature_matrix = np.array([[values[feature] for feature in continuous_feature_names] for values in feature_values])
+        
+        diversity = np.var(continuous_feature_matrix)
         return diversity
 
     def adjust_mutation_rate(self, current_rate, diversity, min_rate, max_rate):
@@ -420,7 +475,7 @@ class GeneticOptimizer():
     def find_counterfactuals(self, query_instance, number_cf, desired_output, maxiterations):
         """Find counterfactuals by generating them through genetic algorithm"""
         # population size might be parameter or depend on number cf required
-        population_size = 40*number_cf
+        population_size = 50*number_cf
         # prepare data instance to format and transform categorical features
         # Normalization is happening one level above
         #self.transformer.normalize_instance(query_instance)

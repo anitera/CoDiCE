@@ -8,7 +8,7 @@ from trustce.ceoptimizers.optimizer_interface import OptimizerInterface, Optimiz
 class CFsearch:
     def __init__(self, transformer, model, sampler, config, optimizer_name="genetic", distance_continuous="weighted_l1", 
                  distance_categorical="weighted_l1", loss_type="hinge_loss",
-                 sparsity_penalty="elastic_net", alpha=0.5, beta=0.5, coherence=False,
+                 sparsity=False, coherence=False,
                  objective_function_weights = [0.5, 0.5, 0.5]):
         self.transformer = transformer
         self.model = model
@@ -17,9 +17,7 @@ class CFsearch:
         self.distance_continuous = distance_continuous
         self.distance_categorical = distance_categorical
         self.loss_type = loss_type
-        self.sparsity_penalty = sparsity_penalty
-        self.alpha = alpha
-        self.beta = beta
+        self.sparsity = sparsity
         self.coherence = coherence
         self.objective_function_weights = objective_function_weights
         self.counterfactuals = []
@@ -33,7 +31,7 @@ class CFsearch:
         """
         Initialize optimizer using OptimizerFactory
         """
-        self.optimizer = OptimizerFactory.get_optimizer(self.optimizer_name, self.model, self.transformer, self.instance_sampler, self.distance_continuous, self.distance_categorical, self.loss_type, self.sparsity_penalty, self.alpha, self.beta, self.coherence, self.objective_function_weights, self.diffusion_map, self.mads)
+        self.optimizer = OptimizerFactory.get_optimizer(self.optimizer_name, self.model, self.transformer, self.instance_sampler, self.distance_continuous, self.distance_categorical, self.loss_type, self.sparsity, self.coherence, self.objective_function_weights, self.diffusion_map, self.mads)
         return
 
     def store_counterfactuals(self, output_folder, indexname):
@@ -372,15 +370,15 @@ class CFsearch:
             probability_sign = np.sign(control_prediction - original_prediction)
             # I modified required_label to required_label[0] because it was a list of one element
             # Debugging print statements
-            print(f"probability_sign: {probability_sign}, type: {type(probability_sign)}")
-            print(f"required_label: {required_label}, type: {type(required_label)}")
+            #print(f"probability_sign: {probability_sign}, type: {type(probability_sign)}")
+            #print(f"required_label: {required_label}, type: {type(required_label)}")
 
             # Convert required_label to integer if it's a float
             if isinstance(required_label, (list, np.ndarray)) and len(required_label) == 1:
                 required_label = int(required_label[0])
 
             # Further debugging
-            print(f"Modified required_label: {required_label}, type: {type(required_label)}")
+            #print(f"Modified required_label: {required_label}, type: {type(required_label)}")
 
             return probability_sign[required_label]
         else:

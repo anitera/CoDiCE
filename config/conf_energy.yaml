@@ -30,12 +30,9 @@ cfsearch:
     weighted_l1_params:
       weights: [1, 1, 1, 1]
   categorical_distance: hamming # l1
-  sparsity_penalty: 
-    type: not # Possible values [elastic_net, not]
-    alpha: 0.5
-    beta: 0.5
-  coherence: True # False # True
+  sparsity: True # Possible values: [True, False]
+  coherence: True # Possible values: [True, False]
   search_normalization: False # standard
   search_encoding: False # frequency
-  objective_function_weights: [0.5, 0.5, 0.5] # loss, distance, coherence TODO add sparsity
+  objective_function_weights: [0.5, 0.5, 0.5] # weights for distance, sparsity, coherence penalties
   feature_weights: False

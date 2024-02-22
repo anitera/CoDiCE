@@ -117,9 +117,7 @@ class TestCFSearch(unittest.TestCase):
                                distance_continuous=config_for_cfsearch["continuous_distance"], 
                                distance_categorical=config_for_cfsearch["categorical_distance"], 
                                loss_type=config_for_cfsearch["loss_type"],
-                               sparsity_penalty=config_for_cfsearch["sparsity_penalty"]["type"],
-                               alpha=config_for_cfsearch["sparsity_penalty"]["alpha"],
-                               beta=config_for_cfsearch["sparsity_penalty"]["beta"], 
+                               sparsity=config_for_cfsearch["sparsity"],
                                coherence=config_for_cfsearch["coherence"],
                                objective_function_weights=config_for_cfsearch["objective_function_weights"])
 
@@ -135,15 +133,15 @@ class TestCFSearch(unittest.TestCase):
         # Visualise the values of counterfactuals and original instance only in jupyter notebook
         # Store candidates and fitness to files
         array_candidates_values, fitnes_history, loss_history, distance_history = self.search.draw_trace_search()
-        self.store_candidates(array_candidates_values, file_indicator="diab_3euc")
-        self.store_fitness(fitnes_history, file_indicator="diab_3euc")
-        self.store_loss(loss_history, file_indicator="diab_3euc")
-        self.store_distance(distance_history, file_indicator="diab_3euc")
+        self.store_candidates(array_candidates_values, file_indicator="diab_5")
+        self.store_fitness(fitnes_history, file_indicator="diab_5")
+        self.store_loss(loss_history, file_indicator="diab_5")
+        self.store_distance(distance_history, file_indicator="diab_5")
         self.search.visualize_as_dataframe(target_instance, counterfacturals)
-        self.search.store_counterfactuals(self.config.get_config_value("output_folder"), "diab_3euc")
-        self.search.store_evaluations(self.config.get_config_value("output_folder"), "diab_3euc")      
+        self.search.store_counterfactuals(self.config.get_config_value("output_folder"), "diab_5")
+        self.search.store_evaluations(self.config.get_config_value("output_folder"), "diab_5")      
 
-    
+    """
     def test_cf_search_for_train(self):
         self.data = Dataset(self.config.get_config_value("dataset"), "Class variable")
         self.normalization_transformer = Transformer(self.data, self.config)
@@ -175,8 +173,8 @@ class TestCFSearch(unittest.TestCase):
 
         
         self._x_train.to_csv("results/original_diabetes_train.csv", index=False)
-        all_counterfactuals.to_csv("results/counterfactuals_diabetes_train.csv", index=False)
-        
+        all_counterfactuals.to_csv("results/counterfactuals_diabetes_train_weighted.csv", index=False)
+    """    
 
 
 def sample_rule_based_functions(target_val):

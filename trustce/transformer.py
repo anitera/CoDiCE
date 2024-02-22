@@ -175,12 +175,13 @@ class FeatureTransformer(object):
             elif self.norm_type == "standard":
                 self.normalize_cont_value = lambda x: (x - self.mean) / self.std
                 self.denormalize_cont_value = lambda x: x * self.std + self.mean
-            elif self.norm_type == "none":
+            elif self.norm_type == False:
                 self.normalize_cont_value = lambda x: x
                 self.denormalize_cont_value = lambda x: x
 
             self.original_range = self.get_from_dataset(dataset)
             self.normalized_range = self.get_normalized_range(dataset)
+
         elif self.feature_name in dataset.categorical_features_list:
             self.original_range = self.get_feature_choice(dataset)
             self.enc_type = config.get_config_value("model")["categorical_features_encoding"] #TODO this could be done better with OOP
@@ -198,7 +199,7 @@ class FeatureTransformer(object):
                 self._initialize_label_encoder(dataset)
                 self.normalize_cat_value = self._label_enc
                 self.denormalize_cat_value = self._label_dec
-            elif self.enc_type == "none":
+            elif self.enc_type == False:
                 # Probably should raise the warning that categorical feature is not encoded
                 self.normalize_cat_value = lambda x: x
                 self.denormalize_cat_value = lambda x: x
@@ -229,6 +230,9 @@ class FeatureTransformer(object):
             return [0, len(dataset.data[self.feature_name].unique())-1]
         elif self.enc_type == "frequency":
             raise NotImplementedError
+        elif self.enc_type == False:
+            # Return all unique values for the feature as a list
+            return list(dataset.data[self.feature_name].unique())
         else:
             raise ValueError("Encoding type is not supported")
     

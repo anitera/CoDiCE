@@ -16,8 +16,8 @@ model:
   gp_params:
     model_number: 1
   path: models/energy_summer_gplearn.pkl
-  categorical_features_encoding: none # Possible values: [onehot, label_encoder, frequency, none]
-  continuous_features_normalization: none # Possible values: [minmax, standard, none]
+  categorical_features_encoding: False # Possible values: [onehot, label_encoder, frequency, none]
+  continuous_features_normalization: False # Possible values: [minmax, standard, none]
 
 cfsearch:
   optimizer: genetic # Possible values: [random, CPLEX, genetic], currently supported genetic
@@ -25,8 +25,9 @@ cfsearch:
   continuous_distance:
     type: weighted_l1 # Possible values: [weighted_l1, diffusion]
     diffusion_params:
-      kernel_size: 2  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
-      number_of_eigenvectors: 50 # how many dimensions or features of the diffusion space you want to consider
+      k_neighbors: 10  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
+      alpha: 1 # how many dimensions or features of the diffusion space you want to consider
+      diffusion_normalization: False # standard
     weighted_l1_params:
       weights: [1, 1, 1, 1]
   categorical_distance: hamming # l1

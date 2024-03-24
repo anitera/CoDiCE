@@ -13,11 +13,11 @@ class InstanceFactory(object):
         self._schema_from_lists(dataset.categorical_features_list, dataset.continuous_features_list)
 
     def _schema_from_lists(self, cat_list, cont_list):
-        for cat in cat_list:
-            self.instance_schema[cat] = CatCEFeature
-
         for cont in cont_list:
             self.instance_schema[cont] = NumCEFeature
+
+        for cat in cat_list:
+            self.instance_schema[cat] = CatCEFeature
 
     def create_instance_from_json(self, json_values: str):
         dict_values = json.loads(json_values)

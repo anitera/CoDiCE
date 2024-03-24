@@ -53,9 +53,13 @@ class Dataset(object):
         """
         Check if feature in data is indeed categorical
         """
+        feature_dtype = self.data[feature_name].dtype
+        unique_values = self.data[feature_name].nunique()
+        max_unique_values_for_categorical = 5
         is_object_dtype = self.data[feature_name].dtype == 'object'
         is_binary_numeric = self.data[feature_name].nunique() == 2 and self.data[feature_name].dtype in ['float64', 'int64']
-        assert (is_object_dtype or is_binary_numeric), "Feature {} is not categorical".format(feature_name)
+        is_small_numeric_categorical = unique_values <= max_unique_values_for_categorical and feature_dtype in ['float64', 'int64']
+        assert (is_object_dtype or is_binary_numeric or is_small_numeric_categorical), "Feature {} is not categorical".format(feature_name)
 
     def infer_feature_type_from_dataset(self):
         """
@@ -98,6 +102,12 @@ class Dataset(object):
             self.data["Self_Employed"].fillna(self.data["Self_Employed"].mode()[0], inplace=True)
             self.data["Credit_History"].fillna(self.data["Credit_History"].mode()[0], inplace=True)
             self.data = self.data.dropna(subset=['LoanAmount', 'Loan_Amount_Term'])
+        elif self.outcome_column_name == "class":
+            for feature_name in self.config['continuous_features']:
+                self.data[feature_name] = self.data[feature_name].astype('int')
+            for feature_name in self.config['categorical_features']:
+                if feature_name in ['is_recid', 'is_violent_recid', 'two_year_recid']:
+                    self.data[feature_name] = self.data[feature_name].astype('category')
 
         self.data = self.data.dropna(subset=self.config['continuous_features'])
         self.data = self.data.dropna(subset=self.config['categorical_features'])

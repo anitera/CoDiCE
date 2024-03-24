@@ -170,11 +170,18 @@ class GeneticOptimizer():
         distance_combined = distance_continuous + distance_categorical
 
         sparsity_penalty = 0
-        # Calculate the sparsity penalty
+        tolerance = 0.01  # Define a tolerance level, e.g., 1% of the feature value range
+
+        # Calculate the sparsity penalty with tolerance
         if self.sparsity:
             for feature_name in counterfactual_instance.features:
-                if counterfactual_instance.features[feature_name].value != query_instance.features[feature_name].value:
-                    sparsity_penalty += 1  # Increment for each changed feature
+                original_value = query_instance.features[feature_name].value
+                counterfactual_value = counterfactual_instance.features[feature_name].value
+                difference = abs(counterfactual_value - original_value)
+
+                # Check if the difference is greater than the tolerance
+                if difference > tolerance:
+                    sparsity_penalty += 1  # Increment for each significantly changed feature
 
             sparsity_penalty = sparsity_penalty / len(counterfactual_instance.features)
 
@@ -186,7 +193,7 @@ class GeneticOptimizer():
             #print("Inconsistent features: ", inconsistent_features)
 
         # calculate fitness function
-        fitness = 10*loss + self.hyperparameters[0]*(distance_continuous + 0.5*distance_categorical) + self.hyperparameters[1]*sparsity_penalty + self.hyperparameters[2]*coherence_penalty
+        fitness = 10*loss + self.hyperparameters[0]*distance_continuous + 0.1*distance_categorical + self.hyperparameters[1]*sparsity_penalty + self.hyperparameters[2]*coherence_penalty
         return fitness, loss, distance_combined
 
     
@@ -475,7 +482,7 @@ class GeneticOptimizer():
     def find_counterfactuals(self, query_instance, number_cf, desired_output, maxiterations):
         """Find counterfactuals by generating them through genetic algorithm"""
         # population size might be parameter or depend on number cf required
-        population_size = 50*number_cf
+        population_size = 20*number_cf
         # prepare data instance to format and transform categorical features
         # Normalization is happening one level above
         #self.transformer.normalize_instance(query_instance)
@@ -491,6 +498,7 @@ class GeneticOptimizer():
         t = 1e-4
         stop_count = 0
         self.population = self.generate_population(query_instance, population_size)
+        print("Get values of one population item", self.population[0].get_values_dict())
         fitness_list, loss, distance_combined = self.evaluate_population(self.population, query_instance, desired_output)
         
         # Sorting didn't work properly

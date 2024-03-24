@@ -1,0 +1,41 @@
+dataset:
+  type: csv # or csv
+  path: datasets/breast_cancer.csv
+  continuous_features: ['radius_mean', 'texture_mean', 'perimeter_mean', 'area_mean','smoothness_mean', 'compactness_mean', 'concavity_mean','concave points_mean', 'symmetry_mean', 'fractal_dimension_mean','radius_se', 'texture_se', 'perimeter_se', 'area_se', 'smoothness_se','compactness_se', 'concavity_se', 'concave points_se', 'symmetry_se','fractal_dimension_se', 'radius_worst', 'texture_worst','perimeter_worst', 'area_worst', 'smoothness_worst','compactness_worst', 'concavity_worst', 'concave points_worst','symmetry_worst', 'fractal_dimension_worst']
+  categorical_features: [ ]
+  target: 'diagnosis'
+
+constraints_file: config/constraints_conf_bc.json
+output_folder: config/output
+
+model:
+  model_type: classification
+  model_backend: sklearn
+  state: pretrained
+  name: LogisticRegression
+  path: models/breast_cancer_logistic_model.pkl
+  categorical_features_encoding: False # Possible values: [onehot, label_encoder, frequency]
+  continuous_features_normalization: False # Possible values: [minmax, standard]
+
+cfsearch:
+  optimizer: genetic # Possible values: [random, CPLEX, genetic], currently supported genetic
+  loss_type: hinge
+  continuous_distance:
+    type: diffusion # Possible values: [weighted_l1, diffusion]
+    diffusion_params:
+      k_neighbors: 8  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
+      alpha: 1 # how many dimensions or features of the diffusion space you want to consider
+      diffusion_normalization: True # standard
+    weighted_l1_params:
+      weights: [ 1, 1, 1, 1 ]
+  categorical_distance: hamming # l1
+  sparsity_penalty:
+    type: elastic_net
+    alpha: 0.5
+    beta: 0.5
+  sparsity: False # True
+  coherence: True # False # True
+  search_normalization: False # standard
+  search_encoding: False # frequency
+  objective_function_weights: [ 0, 0, 1.5 ] # loss, distance, coherence TODO add sparsity
+  feature_weights: False

@@ -37,7 +37,11 @@ class STDiffusionMap(object):
         return self
 
     def _make_diffusion_coords(self, L):
-        evals, evecs = spsl.eigs(L, k=((len(self.data) - 1)//2), which='LR')
+        if len(self.data) > 1000:
+            print("The data is too large")
+            evals, evecs = spsl.eigsh(L, k=50, which='LM')
+        else:
+            evals, evecs = spsl.eigs(L, k=((len(self.data) - 1)//2), which='LR')
         ix = evals.argsort()[::-1][1:]
         evals = np.real(evals[ix])
         evecs = np.real(evecs[:, ix])
@@ -85,7 +89,7 @@ class STDiffusionMap(object):
         #self.epsilon_fitted, d = self.choose_optimal_eps_bgh(scaled_dists.data**2, epsilons=None)
         self.local_scale = self.calculate_local_scale(scaled_dists)
         # Make kernel symmetric
-        local_scale_matrix = self.local_scale*self.local_scale.T
+        #local_scale_matrix = self.local_scale*self.local_scale.T
         #scaled_dists.data = self.gaussian_kfxn(scaled_dists.data, self.epsilon_fitted)
         local_scale_data = self.local_scale_to_data(scaled_dists.data, self.local_scale)
         scaled_dists.data = self.selftuning_kernel(scaled_dists.data, local_scale_data)
@@ -99,7 +103,9 @@ class STDiffusionMap(object):
         return np.exp(-d**2 / (4. * epsilon))
 
     def selftuning_kernel(self, d, local_scale_data):
-        return np.exp(-d**2 / (local_scale_data**2))
+        # Add division stability
+        epsilon = 1e-10
+        return np.exp(-d**2 / (local_scale_data**2 + epsilon))
 
     def calculate_local_scale(self, scaled_dists):
         local_scale = np.zeros(self.data.shape[0])

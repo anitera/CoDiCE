@@ -24,7 +24,7 @@ class CEInstance():
 
 
     def to_numpy_array(self):
-        return np.array([feature.value for feature in self.features.values()])
+        return np.array([feature.value for feature in self.features.values()], dtype='object')
 
     def __iter__(self):
         return iter(self.features.values())

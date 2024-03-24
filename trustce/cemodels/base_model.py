@@ -50,7 +50,9 @@ class BaseModel(ModelInterface):
         """
         # Suppress specific warning
         warnings.filterwarnings(action='ignore', category=UserWarning)
-        return self.predict(x.to_numpy_array().reshape(1, -1))
+        input = x.to_numpy_array().reshape(1, -1)
+        # Check type of individual point in input array
+        return self.predict(input)
     
     def predict_proba_instance(self, x: CEInstance):
         """

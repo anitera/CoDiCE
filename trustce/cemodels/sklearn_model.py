@@ -13,6 +13,8 @@ class SklearnModel(ModelInterface):
         self.model_name = model_config.get('name')
         self.model_state = model_config.get('state')
         self.model_path = model_config.get('path')
+        self.model_categorical_encoding = model_config.get('categorical_features_encoding')
+        self.model_continuous_encoding = model_config.get('continuous_features_normalization')
 
         if self.model_state == "pretrained":
             self.model = self.load_model(self.model_path)
@@ -40,6 +42,7 @@ class SklearnModel(ModelInterface):
         """
         # Suppress specific warning
         warnings.filterwarnings(action='ignore', category=UserWarning)
+        print(x.to_numpy_array())
         return self.predict(x.to_numpy_array().reshape(1, -1))[0]
         
     def predict_proba_instance(self, x: CEInstance):
@@ -47,6 +50,7 @@ class SklearnModel(ModelInterface):
         Predict instance
         """
         warnings.filterwarnings(action='ignore', category=UserWarning)
+        print(x.to_numpy_array())
         return self.predict_proba(x.to_numpy_array().reshape(1, -1))[0]
 
     def evaluate(self, X, y):

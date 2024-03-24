@@ -1,10 +1,10 @@
-# trustCE
+# CoDiCE
 
 ## Introduction
-`trustCE` is a Python package designed for counterfactual explanation search. By accounting for cognitive biases, `trustCE` aims to generate trustworthy explanations, making it a valuable tool for data scientists and researchers in the field of explainable AI.
+`CoDiCE` is a Python package designed for counterfactual explanation search. By accounting for cognitive biases, `trustCE` aims to generate trustworthy explanations, making it a valuable tool for data scientists and researchers in the field of explainable AI.
 
 ## Installation
-To install `trustCE`, use the following pip command:
+To install `CoDiCE`, use the following pip command:
 ```
 pip install trustce
 ```
@@ -16,7 +16,7 @@ pip install trustce[dev,sklearn,homeloan]
 ## Configuration
 
 ### Constraints Configuration
-`trustCE` allows users to specify constraints for the search. You can define which features are immutable, have a monotonic relationship, or have causal or rule dependencies. Here's an example configuration located in `config/constraints_conf.json`:
+`CoDiCE` allows users to specify constraints for the search. You can define which features are immutable, have a monotonic relationship, or have causal or rule dependencies. Here's an example configuration located in `config/constraints_conf.json`:
 
 ```json
 {

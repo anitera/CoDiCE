@@ -1,19 +1,19 @@
 dataset:
   type: csv # or csv
-  path: datasets/homeloan_oredered_features.csv
-  continuous_features: ['ApplicantIncome','CoapplicantIncome','LoanAmount', 'Loan_Amount_Term', 'Credit_History']
-  categorical_features: ['Gender', 'Married', 'Dependents', 'Education', 'Self_Employed', 'Property_Area']
-  target: Loan_Status
+  path: datasets/adult_full_organized.csv
+  continuous_features: ['age', 'fnlwgt', 'educational-num', 'capital-gain', 'capital-loss', 'hours-per-week']
+  categorical_features: ['workclass', 'education', 'marital-status', 'occupation', 'relationship', 'race', 'gender', 'native-country']
+  target: income
 
-constraints_file: config/constraints_homeloan_ch.json
+constraints_file: config/constraints_adult.json
 output_folder: results
 
 model:
   model_type: classification
-  model_backend: sklearn
+  model_backend: sklearn # Possible values: [tensorflow, sklearn]
   state: pretrained
   name: LogisticRegression
-  path: models/homeloan_logistic_model.pkl
+  path: models/adult_logistic_model.pkl
   categorical_features_encoding: False # Possible values: [onehot, label_encoder, frequency]
   continuous_features_normalization: False # Possible values: [minmax, standard]
 
@@ -23,7 +23,7 @@ cfsearch:
   continuous_distance:
     type: diffusion # Possible values: [weighted_l1, diffusion]
     diffusion_params:
-      k_neighbors: 8  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
+      k_neighbors: 10  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
       alpha: 1 # how many dimensions or features of the diffusion space you want to consider
       diffusion_normalization: False # standard
     weighted_l1_params:
@@ -33,5 +33,5 @@ cfsearch:
   coherence: True # Possible values: [True, False]
   search_normalization: False # standard
   search_encoding: False # frequency
-  objective_function_weights: [0.5, 0, 0] # weights for distance, sparsity, coherence penalties
+  objective_function_weights: [0.5, 0, 0.5] # weights for distance, sparsity, coherence penalties
   feature_weights: False

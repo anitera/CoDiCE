@@ -5,7 +5,6 @@ import os
 import sys
 import pickle
 from sklearn.metrics import euclidean_distances
-from scipy.spatial.distance import mahalanobis
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from trustce.ceutils.diffusion import STDiffusionMap
@@ -17,67 +16,42 @@ from trustce.ceutils.diffusion import STDiffusionMap
 class TestCFSearch(unittest.TestCase):
     def setUp(self):
         # Example usage:
-        self.test_identifier = 'breast_cancer_weighted'
+        self.test_identifier = 'homeloan_trust_diff_1'
     
     def test_evaluation(self):
         # Read data
-        df_train = pd.read_csv('datasets/breast_cancer.csv')
-        del df_train['id']
-        del df_train['Unnamed: 32'] 
+        df_train = pd.read_csv('datasets/homeloan_clean.csv')
         # Drop Class variable
-        target_name = "diagnosis"
-        df_train = df_train.drop(target_name, axis=1)
-        df_original_instances = pd.read_csv('results/original_breast_cancer_train_weighted.csv')
-        df_counterfactuals = pd.read_csv('results/counterfactuals_breast_cancer_train_weighted.csv')
-        df_original_instances = df_original_instances[:100]
-        df_counterfactuals = df_counterfactuals[:100]
-        #slicing_df = pd.read_csv('results/original_adult_logistic_weighted.csv')
-        # Fiind instances from slicing_df in df_original_instances
-        #matching_indices = df_original_instances.index.isin(slicing_df.index)
-        #df_original_instances = df_original_instances[matching_indices]
-        #df_counterfactuals = df_counterfactuals[matching_indices]
-        #print(len(slicing_df), len(df_counterfactuals))
-
-        #df_counterfactuals_na_indexes = df_counterfactuals[df_counterfactuals.isna().any(axis=1)].index
-        #df_original_instances = df_original_instances.drop(df_counterfactuals_na_indexes)
-        #df_counterfactuals = df_counterfactuals.drop(df_counterfactuals_na_indexes)
-
-        print(len(df_original_instances), len(df_counterfactuals))
-
-        if target_name in df_counterfactuals.columns:
-            df_counterfactuals = df_counterfactuals.drop(target_name, axis=1)
-
-        if target_name in df_original_instances.columns:
-            df_original_instances = df_original_instances.drop(target_name, axis=1)
-
-        categorical_feature_names = []
-        continuous_feature_names = ['radius_mean', 'texture_mean', 'perimeter_mean', 'area_mean','smoothness_mean', 'compactness_mean', 'concavity_mean','concave points_mean', 'symmetry_mean', 'fractal_dimension_mean','radius_se', 'texture_se', 'perimeter_se', 'area_se', 'smoothness_se','compactness_se', 'concavity_se', 'concave points_se', 'symmetry_se','fractal_dimension_se', 'radius_worst', 'texture_worst','perimeter_worst', 'area_worst', 'smoothness_worst','compactness_worst', 'concavity_worst', 'concave points_worst','symmetry_worst', 'fractal_dimension_worst']
-        model_path = 'models/breast_cancer_model.pkl' 
-        df_counterfactuals = df_counterfactuals[continuous_feature_names + categorical_feature_names]
-        df_original_instances = df_original_instances[continuous_feature_names + categorical_feature_names]
+        df_train = df_train.drop('Loan_Status', axis=1)
+        df_original_instances = pd.read_csv('results/original_homeloan_train.csv') #train_data_face_homeloan.csv
+        df_counterfactuals = pd.read_csv('results/counterfactuals_homeloan_train_diff_1.csv')
+        categorical_feature_names = ['Gender', 'Married', 'Dependents', 'Education', 'Self_Employed', 'Property_Area']
+        continuous_feature_names = ['ApplicantIncome','CoapplicantIncome','LoanAmount', 'Loan_Amount_Term', 'Credit_History']
+        model_path = 'models/homeloan_logistic_model.pkl' 
         with open(model_path, 'rb') as filehandle:
             model = pickle.load(filehandle)
         st_diff_map = STDiffusionMap(n_neighbors=10, alpha=1.0)
-        # Make array of continuous features
-        cont_matrix = df_train[continuous_feature_names].to_numpy()
-        st_diff_map.fit(cont_matrix)
+        st_diff_map.fit(df_train[continuous_feature_names])
         evaluations_df = evaluate_counterfactuals(df_train, model, df_original_instances, df_counterfactuals, continuous_feature_names, categorical_feature_names, st_diff_map=st_diff_map)
         print(evaluations_df)
         # Save evaluations
-        evaluations_df.to_csv(f'results/evaluation100_{self.test_identifier}.csv', index=False)
+        evaluations_df.to_csv(f'results/evaluations_{self.test_identifier}.csv', index=False)
 
 def evaluate_counterfactuals(df_train, model, df_original, df_counterfactuals, continuous_features, categorical_features, st_diff_map=None):
     # Placeholder for your custom functions
     def calculate_sparsity_continuous(original, counterfactual):
         changes = original[continuous_features] != counterfactual[continuous_features]
-        sparsity_count = len(changes.sum())/len(continuous_features)
+        changes_sum = changes.sum()
+        sparsity_count = len(changes_sum[changes_sum != 0])/len(continuous_features)
         return sparsity_count
 
     def calculate_sparsity_categorical(original, counterfactual):
         if len(categorical_features) == 0:
             return 0
         changes = original[categorical_features] != counterfactual[categorical_features]
-        sparsity_count = len(changes.sum())/len(categorical_features)
+        changes_sum = changes.sum()
+        # return how many non 0 numbers are in changes_sum
+        sparsity_count = len(changes_sum[changes_sum != 0])/len(categorical_features)
         return sparsity_count
     
     def calculate_custom_diffusion_distance(original, counterfactual):
@@ -97,7 +71,7 @@ def evaluate_counterfactuals(df_train, model, df_original, df_counterfactuals, c
         for feature_name in categorical_features:
             marginal_signs[feature_name] = get_only_marginal_prediction_sign(original, counterfactual, feature_name, required_label)
         # Calculate how many minuses are in marginal_signs
-        coherence_counterfactual_score = sum(1 for key, value in marginal_signs.items() if value != -1)/len(marginal_signs)
+        coherence_counterfactual_score = sum(1 for key, value in marginal_signs.items() if value == 1)/len(marginal_signs)
         uncoherent_suggestions = [key for key, value in marginal_signs.items() if value == -1]
         coherence_penalty = 1 - coherence_counterfactual_score
         return coherence_penalty, uncoherent_suggestions
@@ -115,12 +89,6 @@ def evaluate_counterfactuals(df_train, model, df_original, df_counterfactuals, c
         if isinstance(required_label, (list, np.ndarray)) and len(required_label) == 1:
             required_label = int(required_label[0])
         return probability_sign[required_label]
-    
-    def calculate_mahalanobis_distance(x, y, VI):
-        """
-        Calculate the Mahalanobis distance between two vectors, x and y, using the inverse of the covariance matrix VI.
-        """
-        return mahalanobis(x, y, VI)
 
     
     evaluations = []
@@ -166,15 +134,6 @@ def evaluate_counterfactuals(df_train, model, df_original, df_counterfactuals, c
         # Custom coherence penalty
         coherence_penalty, incoherent_features = calculate_coherence_penalty(original_row, counterfactual_row, desired_prediction)
         
-        standardised_original = np.array((original_row[continuous_features] - mean_cont) / std_cont)
-        standardised_counterfactual = np.array((counterfactual_row[continuous_features] - mean_cont) / std_cont)
-        cov_matrix = np.cov(df_train[continuous_features].values, rowvar=False)
-        inv_cov_matrix = np.linalg.inv(cov_matrix)
-        # Calculate Mahalanobis distance
-        mahalanobis_distance = calculate_mahalanobis_distance(standardised_original, standardised_counterfactual, inv_cov_matrix)
-        print("Mahalanobis distance: ", mahalanobis_distance)
-        
-        
         evaluations.append({
             'index': index,
             'validity': validity[0],
@@ -183,7 +142,6 @@ def evaluate_counterfactuals(df_train, model, df_original, df_counterfactuals, c
             'l2_distance_continuous': l2_distance_continuous,
             'l1_distance_categorical': l1_distance_categorical,
             'l2_distance_categorical': l2_distance_categorical,
-            'mahalanobis_distance': mahalanobis_distance,
             'sparsity_continuous': sparsity_continuous,
             'sparsity_categorical': sparsity_categorical,
             'coherence_penalty': coherence_penalty,

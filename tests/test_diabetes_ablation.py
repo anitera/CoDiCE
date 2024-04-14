@@ -5,6 +5,7 @@ import os
 import sys
 import pickle
 import json
+from itertools import product
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from sklearn.linear_model import LogisticRegression
@@ -116,59 +117,58 @@ class TestCFSearch(unittest.TestCase):
         self.sampler = CEInstanceSampler(self.config, self.normalization_transformer, self.instance_factory)
 
         self.model = BaseModel(self.config.get_config_value("model"), self.model_pipeline)
-        config_for_cfsearch = self.config.get_config_value("cfsearch")
-        self.search = CFsearch(self.normalization_transformer, self.model, self.sampler, 
-                               config=self.config,
-                               optimizer_name=config_for_cfsearch["optimizer"], 
-                               distance_continuous=config_for_cfsearch["continuous_distance"], 
-                               distance_categorical=config_for_cfsearch["categorical_distance"], 
-                               loss_type=config_for_cfsearch["loss_type"],
-                               sparsity=config_for_cfsearch["sparsity"],
-                               coherence=config_for_cfsearch["coherence"],
-                               objective_function_weights=config_for_cfsearch["objective_function_weights"])
 
-        """
-        with open(self.target_instance_json, 'r') as file:
-            target_instance_json = file.read() #json.load(file)
+        diffusion_coefficients = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+        #sparsity_coefficients = [0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2]
+        coherence = 0.5
+        #coherence_coefficients = [0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2]
 
-        target_instance = self.instance_factory.create_instance_from_json(target_instance_json)
-
-        counterfacturals = self.search.find_counterfactuals(target_instance, 1, "opposite", 100)
-
-
-        self.search.evaluate_counterfactuals(target_instance, counterfacturals)
-        # Visualise the values of counterfactuals and original instance only in jupyter notebook
-        # Store candidates and fitness to files
-        array_candidates_values, fitnes_history, loss_history, distance_history = self.search.draw_trace_search()
-        self.store_candidates(array_candidates_values, file_indicator="diab_5")
-        self.store_fitness(fitnes_history, file_indicator="diab_5")
-        self.store_loss(loss_history, file_indicator="diab_5")
-        self.store_distance(distance_history, file_indicator="diab_5")
-        self.search.visualize_as_dataframe(target_instance, counterfacturals)
-        self.search.store_counterfactuals(self.config.get_config_value("output_folder"), "diab_5")
-        self.search.store_evaluations(self.config.get_config_value("output_folder"), "diab_5")      
-        """
+        # Calculate the total number of combinations
+        total_combinations = len(diffusion_coefficients)
+        print(f"Total combinations: {total_combinations}")
         test_df = self.test_instances[:40]
-        print(test_df.head())
-        time_taken = []
 
-        all_counterfactuals = test_df.copy()
-        for idx, row_instance in test_df.iterrows():
-            
-            target_instance = self.instance_factory.create_instance_from_df_row(row_instance)
-            start_time = time.time()
-            counterfactuals = self.search.find_counterfactuals(target_instance, 1, "opposite", 100)
-            end_time = time.time()
-            all_counterfactuals.loc[idx] = pd.Series(counterfactuals[0].get_values_dict())
-            time_taken.append(end_time - start_time)
+        # Iterating over all combinations
+        for diffusion in diffusion_coefficients:
+            # Set your objective function weights
+            sparsity = 1 - diffusion
+            #print("Current configuration: ", self.config.get_config_value("cfsearch")["objective_function_weights"])
+            self.config.get_config_value("cfsearch")["objective_function_weights"] = [diffusion, sparsity, coherence]
+            print("Current configuration: ", self.config.get_config_value("cfsearch")["objective_function_weights"])
+            # Your existing configuration and search setup
+            config_for_cfsearch = self.config.get_config_value("cfsearch")
+            self.search = CFsearch(self.normalization_transformer, self.model, self.sampler, 
+                                config=self.config,
+                                optimizer_name=config_for_cfsearch["optimizer"], 
+                                distance_continuous=config_for_cfsearch["continuous_distance"], 
+                                distance_categorical=config_for_cfsearch["categorical_distance"], 
+                                loss_type=config_for_cfsearch["loss_type"],
+                                sparsity=config_for_cfsearch["sparsity"],
+                                coherence=config_for_cfsearch["coherence"],
+                                objective_function_weights=config_for_cfsearch["objective_function_weights"])
+
+
+            all_counterfactuals = test_df.copy()
+            for idx, row_instance in test_df.iterrows():
+                
+                target_instance = self.instance_factory.create_instance_from_df_row(row_instance)
+                counterfactuals = self.search.find_counterfactuals(target_instance, 1, "opposite", 100)
+                all_counterfactuals.loc[idx] = pd.Series(counterfactuals[0].get_values_dict())
+
+            # Print or log the average time taken and other results as needed
+            print(f"Configuration: Diffusion {diffusion}, Sparsity {sparsity}, Coherence {coherence}")
+
+            # Unique filenames based on the current configuration
+            filename_suffix = f"diff_{diffusion}_spar_{sparsity}_coh_{coherence}"
+            cf_filename = f"results/counterfactuals_diabetes_{filename_suffix}.csv"
+
+            # Save the results
+            all_counterfactuals.to_csv(cf_filename, index=False)
+            print(f"Results saved to {cf_filename}")
  
-        print(f"Average time taken per cf search: {np.mean(time_taken)} seconds")
         self.test_instances.to_csv("results/original_diabetes_diffusion_ablation.csv", index=False)
-        all_counterfactuals.to_csv("results/counterfactuals_diabetes_diffusion_ablation_coh15.csv", index=False) 
-        # If you also want to save the timing information to a file
-        with open('results/diabetes_timing_info_ablation_coh.txt', 'w') as f:
-            for time in time_taken:
-                f.write(f"{time}\n")
+        all_counterfactuals.to_csv("results/counterfactuals_diabetes_diffusion_ablation_spar15.csv", index=False) 
+
     
     """
     def test_cf_search_for_train(self):

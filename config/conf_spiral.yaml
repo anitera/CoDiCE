@@ -14,8 +14,8 @@ model:
   state: pretrained
   name: LogisticRegression
   path: models/homeloan_logistic_model.pkl
-  categorical_features_encoding: label_encoder # Possible values: [onehot, label_encoder, frequency]
-  continuous_features_normalization: none # Possible values: [minmax, standard, none]
+  categorical_features_encoding: False # Possible values: [onehot, label_encoder, frequency]
+  continuous_features_normalization: False # Possible values: [minmax, standard, none]
 
 cfsearch:
   optimizer: genetic # Possible values: [random, CPLEX, genetic], currently supported genetic
@@ -33,5 +33,5 @@ cfsearch:
   coherence: False # Possible values: [True, False]
   search_normalization: False # standard
   search_encoding: False # frequency
-  objective_function_weights: [1, 2, 0] # weights for distance, sparsity, coherence penalties
+  objective_function_weights: [1.5, 0, 0] # weights for distance, sparsity, coherence penalties
   feature_weights: False

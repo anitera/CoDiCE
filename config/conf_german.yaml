@@ -1,0 +1,37 @@
+dataset:
+  type: csv # or csv
+  path: datasets/german.csv
+  continuous_features: ['duration_in_month', 'credit_amount', 'installment_as_income_perc', 'present_res_since', 'age']
+  categorical_features: ['account_check_status', 'credit_history', 'purpose', 'savings', 'present_emp_since', 'personal_status_sex', 'other_debtors', 'property', 'other_installment_plans', 'housing', 'credits_this_bank', 'job', 'people_under_maintenance', 'telephone', 'foreign_worker']
+  target: default
+
+constraints_file: config/constraints_german.json
+output_folder: results
+
+model:
+  model_type: classification
+  model_backend: sklearn # Possible values: [tensorflow, sklearn]
+  state: pretrained
+  name: LogisticRegression
+  path: models/german_logistic_model.pkl
+  categorical_features_encoding: False # Possible values: [onehot, label_encoder, frequency]
+  continuous_features_normalization: False # Possible values: [minmax, standard]
+
+cfsearch:
+  optimizer: genetic # Possible values: [random, CPLEX, genetic], currently supported genetic
+  loss_type: hinge
+  continuous_distance:
+    type: weighted_l1 # Possible values: [weighted_l1, diffusion]
+    diffusion_params:
+      k_neighbors: 10  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
+      alpha: 1 # how many dimensions or features of the diffusion space you want to consider
+      diffusion_normalization: False # standard
+    weighted_l1_params:
+      weights: [1, 1, 1, 1]
+  categorical_distance: hamming # l1
+  sparsity: True # Possible values: [True, False]
+  coherence: True # Possible values: [True, False]
+  search_normalization: False # standard
+  search_encoding: False # frequency
+  objective_function_weights: [0.5, 0.1, 0.5] # weights for distance, sparsity, coherence penalties
+  feature_weights: False

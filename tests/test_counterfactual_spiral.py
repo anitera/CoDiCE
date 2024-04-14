@@ -33,13 +33,15 @@ class RuleModelPipeline:
         # First rule
         for i in range(X.shape[0]):
             x, y, z = X[i, 0], X[i,1], X[i, 2]
-            if (x > -1.03 and z > 1.3 and -0.19<y<0.6) or (z > 0.75 and x > 0 and -0.19<y<0.6):
+            #if (x > -1.03 and z > 1.3 and -0.19<y<0.6) or (z > 0.75 and x > 0 and -0.19<y<0.6):
+            if (z<-1.34 and x>-0.24 and -0.1<y<0.5) or (x<=-0.24 and z<-0.9 and -0.1<y<0.5):
                 predictor[i] = 1
 
         # Second rule
         for i in range(X.shape[0]):
             x,y, z = X[i, 0],X[i,1], X[i, 2]
-            if (z < -1.4 and x < 1.17 and -0.19<y<0.6) or (z < -0.85 and x < 0 and -0.19<y<0.6):
+            #if (z < -1.4 and x < 1.17 and -0.19<y<0.6) or (z < -0.85 and x < 0 and -0.19<y<0.6):
+            if (z>1.39 and x<0.1 and -0.1<y<0.5) or (x>=0.1 and z>1 and -0.1<y<0.5):
                 predictor[i] = 1
 
         return predictor
@@ -51,12 +53,14 @@ class RuleModelPipeline:
         # First rule
         for i in range(X.shape[0]):
             x, y, z = X[i, 0], X[i,1], X[i, 2]
-            if (x > -1.03 and z > 1.3 and -0.19<y<0.6) or (z > 0.75 and x > 0 and -0.19<y<0.6):
+            #if (x > -1.03 and z > 1.3 and -0.19<y<0.6) or (z > 0.75 and x > 0 and -0.19<y<0.6):
+            if (z<-1.2 and x>-0.24 and -0.1<y<0.5) or (x<=-0.24 and z<-0.9 and -0.1<y<0.5):
                 predictor[i, 1] = 1
         # Second rule
         for i in range(X.shape[0]):
             x,y, z = X[i, 0], X[i,1], X[i, 2]
-            if (z < -1.4 and x < 1.17 and -0.19<y<0.6) or (z < -0.85 and x < 0 and -0.19<y<0.6):
+            #if (z < -1.4 and x < 1.17 and -0.19<y<0.6) or (z < -0.85 and x < 0 and -0.19<y<0.6):
+            if (z>1.39 and x<0.1 and -0.1<y<0.5) or (x>=0.1 and z>1 and -0.1<y<0.5):
                 predictor[i, 1] = 1
 
         predictor[:, 0] = 1 - predictor[:, 1]
@@ -104,7 +108,7 @@ class TestCFSearch(unittest.TestCase):
         # Modify array to be able to store it to file
         fitnes = []
         for i in range(len(fitnes_history)):
-            fitnes.append(fitnes_history[i][0])
+            fitnes.append(fitnes_history[i])
         with open(self.config.get_config_value("output_folder") + "/fitness_history_" + file_indicator + ".json", 'w') as file:
             json.dump(fitnes, file, indent=4, default=self.default_serializer)
             print("fitness_history stored to file in folder: ", self.config.get_config_value("output_folder"))
@@ -138,9 +142,7 @@ class TestCFSearch(unittest.TestCase):
                                distance_continuous=config_for_cfsearch["continuous_distance"], 
                                distance_categorical=config_for_cfsearch["categorical_distance"], 
                                loss_type=config_for_cfsearch["loss_type"], 
-                               sparsity_penalty=config_for_cfsearch["sparsity_penalty"]["type"],
-                               alpha=config_for_cfsearch["sparsity_penalty"]["alpha"],
-                               beta=config_for_cfsearch["sparsity_penalty"]["beta"], 
+                               sparsity=config_for_cfsearch["sparsity"],
                                coherence=config_for_cfsearch["coherence"],
                                objective_function_weights=config_for_cfsearch["objective_function_weights"])
 
@@ -150,23 +152,24 @@ class TestCFSearch(unittest.TestCase):
         target_instance = self.instance_factory.create_instance_from_json(target_instance_json)
         actual_output = self.model.predict_instance(target_instance)
 
-        counterfacturals = self.search.find_counterfactuals(target_instance, 1, "opposite", 20)
+        counterfacturals = self.search.find_counterfactuals(target_instance, 1, "opposite", 100)
 
         print("counterfactuals", counterfacturals[0].get_values_dict())
 
         array_candidates_values, fitnes_history, loss_history, distance_history = self.search.draw_trace_search()
 
+        test_name = "spriral_euc"
         # Store candidates and fitness to files
-        self.store_candidates(array_candidates_values, file_indicator="spiral_selft10")
-        self.store_fitness(fitnes_history, file_indicator="spiral_selft10")
-        self.store_loss(loss_history, file_indicator="spiral_selft10")
-        self.store_distance(distance_history, file_indicator="spiral_selft10")
+        self.store_candidates(array_candidates_values, file_indicator=test_name)
+        self.store_fitness(fitnes_history, file_indicator=test_name)
+        self.store_loss(loss_history, file_indicator=test_name)
+        self.store_distance(distance_history, file_indicator=test_name)
 
         self.search.evaluate_counterfactuals(target_instance, counterfacturals)
         # Visualise the values of counterfactuals and original instance only in jupyter notebook
         self.search.visualize_as_dataframe(target_instance, counterfacturals)
-        self.search.store_counterfactuals(self.config.get_config_value("output_folder"), "spiral_test2")
-        self.search.store_evaluations(self.config.get_config_value("output_folder"), "spiral_eval2")      
+        self.search.store_counterfactuals(self.config.get_config_value("output_folder"), test_name)
+        self.search.store_evaluations(self.config.get_config_value("output_folder"), test_name)      
 
 
 def sample_rule_based_functions(target_val):

@@ -174,7 +174,7 @@ class GeneticOptimizer():
 
         # Calculate the sparsity penalty with tolerance
         if self.sparsity:
-            for feature_name in counterfactual_instance.features:
+            for feature_name in self.transformer.continuous_features_transformers:
                 original_value = query_instance.features[feature_name].value
                 counterfactual_value = counterfactual_instance.features[feature_name].value
                 difference = abs(counterfactual_value - original_value)
@@ -183,6 +183,14 @@ class GeneticOptimizer():
                 if difference > tolerance:
                     sparsity_penalty += 1  # Increment for each significantly changed feature
 
+            for feature_name in self.transformer.categorical_features_transformers:
+                original_value = query_instance.features[feature_name].value
+                counterfactual_value = counterfactual_instance.features[feature_name].value
+
+                # Check if the categorical feature has changed
+                if original_value != counterfactual_value:
+                    sparsity_penalty += 1
+                    
             sparsity_penalty = sparsity_penalty / len(counterfactual_instance.features)
 
         coherence_penalty = 0
@@ -193,7 +201,7 @@ class GeneticOptimizer():
             #print("Inconsistent features: ", inconsistent_features)
 
         # calculate fitness function
-        fitness = 10*loss + self.hyperparameters[0]*distance_continuous + 0.1*distance_categorical + self.hyperparameters[1]*sparsity_penalty + self.hyperparameters[2]*coherence_penalty
+        fitness = 1*loss + self.hyperparameters[0]*distance_continuous + 0.1*distance_categorical + self.hyperparameters[1]*sparsity_penalty + self.hyperparameters[2]*coherence_penalty
         return fitness, loss, distance_combined
 
     

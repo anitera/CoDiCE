@@ -17,32 +17,25 @@ from trustce.ceutils.diffusion import STDiffusionMap
 class TestCFSearch(unittest.TestCase):
     def setUp(self):
         # Example usage:
-        self.test_identifier = 'breast_cancer_weighted'
+        self.test_identifier = 'german_weighted'
     
     def test_evaluation(self):
         # Read data
-        df_train = pd.read_csv('datasets/breast_cancer.csv')
-        del df_train['id']
-        del df_train['Unnamed: 32'] 
+        df_train = pd.read_csv('datasets/german_ordered_features.csv')
         # Drop Class variable
-        target_name = "diagnosis"
+        target_name = "default"
         df_train = df_train.drop(target_name, axis=1)
-        df_original_instances = pd.read_csv('results/original_breast_cancer_train_weighted.csv')
-        df_counterfactuals = pd.read_csv('results/counterfactuals_breast_cancer_train_weighted.csv')
-        df_original_instances = df_original_instances[:100]
-        df_counterfactuals = df_counterfactuals[:100]
+        df_original_instances = pd.read_csv('results/original100_german_train_weighted.csv')
+        df_counterfactuals = pd.read_csv('results/counterfactuals100_german_train_weighted.csv')
         #slicing_df = pd.read_csv('results/original_adult_logistic_weighted.csv')
         # Fiind instances from slicing_df in df_original_instances
         #matching_indices = df_original_instances.index.isin(slicing_df.index)
         #df_original_instances = df_original_instances[matching_indices]
         #df_counterfactuals = df_counterfactuals[matching_indices]
         #print(len(slicing_df), len(df_counterfactuals))
-
         #df_counterfactuals_na_indexes = df_counterfactuals[df_counterfactuals.isna().any(axis=1)].index
         #df_original_instances = df_original_instances.drop(df_counterfactuals_na_indexes)
         #df_counterfactuals = df_counterfactuals.drop(df_counterfactuals_na_indexes)
-
-        print(len(df_original_instances), len(df_counterfactuals))
 
         if target_name in df_counterfactuals.columns:
             df_counterfactuals = df_counterfactuals.drop(target_name, axis=1)
@@ -50,11 +43,14 @@ class TestCFSearch(unittest.TestCase):
         if target_name in df_original_instances.columns:
             df_original_instances = df_original_instances.drop(target_name, axis=1)
 
-        categorical_feature_names = []
-        continuous_feature_names = ['radius_mean', 'texture_mean', 'perimeter_mean', 'area_mean','smoothness_mean', 'compactness_mean', 'concavity_mean','concave points_mean', 'symmetry_mean', 'fractal_dimension_mean','radius_se', 'texture_se', 'perimeter_se', 'area_se', 'smoothness_se','compactness_se', 'concavity_se', 'concave points_se', 'symmetry_se','fractal_dimension_se', 'radius_worst', 'texture_worst','perimeter_worst', 'area_worst', 'smoothness_worst','compactness_worst', 'concavity_worst', 'concave points_worst','symmetry_worst', 'fractal_dimension_worst']
-        model_path = 'models/breast_cancer_model.pkl' 
+        categorical_feature_names = ['account_check_status', 'credit_history', 'purpose', 'savings', 'present_emp_since', 'personal_status_sex', 'other_debtors', 'property', 'other_installment_plans', 'housing', 'credits_this_bank', 'job', 'people_under_maintenance', 'telephone', 'foreign_worker']
+        continuous_feature_names = ['duration_in_month', 'credit_amount', 'installment_as_income_perc', 'present_res_since', 'age']
         df_counterfactuals = df_counterfactuals[continuous_feature_names + categorical_feature_names]
         df_original_instances = df_original_instances[continuous_feature_names + categorical_feature_names]
+        print("Nas in original")
+        print(df_original_instances.isna().sum())
+        print(df_original_instances.head())
+        model_path = 'models/german_logistic_model.pkl' 
         with open(model_path, 'rb') as filehandle:
             model = pickle.load(filehandle)
         st_diff_map = STDiffusionMap(n_neighbors=10, alpha=1.0)
@@ -165,7 +161,6 @@ def evaluate_counterfactuals(df_train, model, df_original, df_counterfactuals, c
         
         # Custom coherence penalty
         coherence_penalty, incoherent_features = calculate_coherence_penalty(original_row, counterfactual_row, desired_prediction)
-        
         standardised_original = np.array((original_row[continuous_features] - mean_cont) / std_cont)
         standardised_counterfactual = np.array((counterfactual_row[continuous_features] - mean_cont) / std_cont)
         cov_matrix = np.cov(df_train[continuous_features].values, rowvar=False)

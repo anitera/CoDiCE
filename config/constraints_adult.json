@@ -1,0 +1,10 @@
+{
+    "features": {
+        "gender": {
+            "type": "immutable"  
+        },
+        "race": {
+            "type": "immutable"
+        }
+    }
+}

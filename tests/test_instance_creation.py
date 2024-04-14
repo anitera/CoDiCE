@@ -3,8 +3,8 @@ import os
 import sys
 from collections import defaultdict
 import json
-from trustce.ceinstance import CEInstance
-from trustce.cefeature import CatCEFeature, NumCEFeature, CEFeatureType
+from codice.ceinstance import CEInstance
+from codice.cefeature import CatCEFeature, NumCEFeature, CEFeatureType
 
 # Your Instance class here
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))

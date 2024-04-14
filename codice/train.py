@@ -7,7 +7,7 @@ import configparser
 import os
 from sklearn.model_selection import train_test_split
 import pandas as pd
-from trustce.cemodels.explainable_model import ExplainableModel
+from codice.cemodels.explainable_model import ExplainableModel
 
 def load_dataset(confpath, datasetpath):
     # Read the configuration file

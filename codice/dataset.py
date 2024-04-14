@@ -1,6 +1,6 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from trustce.ceinstance import CEInstance
+from codice.ceinstance import CEInstance
 import numpy as np
 
 class Dataset(object):

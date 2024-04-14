@@ -1,6 +1,6 @@
 from .model_interface import ModelInterface
 import json
-from trustce.ceinstance import CEInstance
+from codice.ceinstance import CEInstance
 
 class GeneticProgrammingModel(ModelInterface):
     def __init__(self, model_config):

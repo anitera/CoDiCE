@@ -1,15 +1,15 @@
 import unittest
 import json
 
-from trustce.cemodels.gp_model import GeneticProgrammingModel
-from trustce.dataset import Dataset
-from trustce import load_datasets
-from trustce.cemodels.explainable_model import ExplainableModel
+from codice.cemodels.gp_model import GeneticProgrammingModel
+from codice.dataset import Dataset
+from codice import load_datasets
+from codice.cemodels.explainable_model import ExplainableModel
 
-from trustce.ceinstance.instance_sampler import CEInstanceSampler
-from trustce.config import Config
-from trustce.transformer import Transformer
-from trustce.ceinstance.instance_factory import InstanceFactory
+from codice.ceinstance.instance_sampler import CEInstanceSampler
+from codice.config import Config
+from codice.transformer import Transformer
+from codice.ceinstance.instance_factory import InstanceFactory
 
 class TestGeneticProgrammingModel(unittest.TestCase):
 

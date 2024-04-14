@@ -1,6 +1,6 @@
 import numpy as np
 from . import CEFeature
-from trustce.ceinstance import CEInstance
+from codice.ceinstance import CEInstance
 from typing import List, Any
 
 class ICEFeatureSampler(object):

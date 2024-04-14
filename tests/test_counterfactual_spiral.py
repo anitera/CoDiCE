@@ -12,16 +12,16 @@ from sklearn.preprocessing import StandardScaler
 from gplearn.genetic import SymbolicRegressor
 from sklearn.svm import SVC
 
-from trustce.cfsearch import CFsearch
+from codice.cfsearch import CFsearch
 
-from trustce.dataset import Dataset
-from trustce import load_datasets
-from trustce.cemodels.base_model import BaseModel
+from codice.dataset import Dataset
+from codice import load_datasets
+from codice.cemodels.base_model import BaseModel
 
-from trustce.ceinstance.instance_sampler import CEInstanceSampler
-from trustce.config import Config
-from trustce.transformer import Transformer
-from trustce.ceinstance.instance_factory import InstanceFactory
+from codice.ceinstance.instance_sampler import CEInstanceSampler
+from codice.config import Config
+from codice.transformer import Transformer
+from codice.ceinstance.instance_factory import InstanceFactory
 
 class RuleModelPipeline:
         

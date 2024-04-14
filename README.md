@@ -1,16 +1,16 @@
 # CoDiCE
 
 ## Introduction
-`CoDiCE` is a Python package designed for counterfactual explanation search. By accounting for cognitive biases, `trustCE` aims to generate trustworthy explanations, making it a valuable tool for data scientists and researchers in the field of explainable AI.
+`CoDiCE` is a Python package designed for counterfactual explanation search. By accounting for cognitive biases, `codice` aims to generate trustworthy explanations, making it a valuable tool for data scientists and researchers in the field of explainable AI.
 
 ## Installation
 To install `CoDiCE`, use the following pip command:
 ```
-pip install trustce
+pip install codice
 ```
 It is possible to enable different model supports and pre download test datasets. FOr example to enable `dev` version with `sklearn` and the `homeloan` dataset, use the following pip command:
 ```
-pip install trustce[dev,sklearn,homeloan]
+pip install codice[dev,sklearn,homeloan]
 ```
 
 ## Configuration
@@ -75,14 +75,14 @@ You can run the framework using the following steps:
 For a detailed example, refer to `examples_notebook_demos`.
 
 ## Features
-- **Cognitive Bias Handling**: `trustCE` incorporates cognitive biases to provide more intuitive explanations.
+- **Cognitive Bias Handling**: `codice` incorporates cognitive biases to provide more intuitive explanations.
 - **Versatile**: Compatible with various machine learning frameworks like scikit-learn, TensorFlow, PyTorch, and gpgomea.
 - **Performance**: Efficient algorithms ensure quick generation of explanations even for complex models.
 - **Evaluation**: The framework return with every counterfactual instance an evaluation file which has list of metrics.
 
 ## Evaluation Metrics
 
-`trustCE` doesn't just provide counterfactual instances but also offers a comprehensive evaluation of the generated counterfactuals. After the counterfactual search, an evaluation file is generated that contains various explainability metrics.
+`codice` doesn't just provide counterfactual instances but also offers a comprehensive evaluation of the generated counterfactuals. After the counterfactual search, an evaluation file is generated that contains various explainability metrics.
 
 Here's a breakdown of the metrics provided:
 
@@ -117,7 +117,7 @@ These metrics provide a deeper understanding of the counterfactuals and their qu
 
 
 ## Contribution
-We welcome contributions to `trustCE`! If you'd like to contribute, please fork the repository and submit a pull request. For major changes or feature requests, please open an issue first to discuss your ideas.
+We welcome contributions to `codice`! If you'd like to contribute, please fork the repository and submit a pull request. For major changes or feature requests, please open an issue first to discuss your ideas.
 
 ## License
-`trustCE` is available under the MIT License. See the `LICENSE` file for more details.
+`codice` is available under the MIT License. See the `LICENSE` file for more details.

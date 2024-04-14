@@ -4,8 +4,8 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from trustce.cemodels.explainable_model import ExplainableModel
-from trustce.config import Config
+from codice.cemodels.explainable_model import ExplainableModel
+from codice.config import Config
 
 class TestModel(unittest.TestCase):
     def setUp(self):

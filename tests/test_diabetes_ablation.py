@@ -13,17 +13,17 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
-from trustce.cfsearch import CFsearch
+from codice.cfsearch import CFsearch
 
-from trustce.dataset import Dataset
-from trustce import load_datasets
-from trustce.cemodels.sklearn_model import SklearnModel
-from trustce.cemodels.base_model import BaseModel
+from codice.dataset import Dataset
+from codice import load_datasets
+from codice.cemodels.sklearn_model import SklearnModel
+from codice.cemodels.base_model import BaseModel
 
-from trustce.ceinstance.instance_sampler import CEInstanceSampler
-from trustce.config import Config
-from trustce.transformer import Transformer
-from trustce.ceinstance.instance_factory import InstanceFactory
+from codice.ceinstance.instance_sampler import CEInstanceSampler
+from codice.config import Config
+from codice.transformer import Transformer
+from codice.ceinstance.instance_factory import InstanceFactory
 
 class TestCFSearch(unittest.TestCase):
     def setUp(self):

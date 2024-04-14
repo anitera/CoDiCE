@@ -1,14 +1,12 @@
 {
-    "distance_continuous": 14.539561487596801,
-    "distance_categorical": 3,
+    "distance_continuous": 0.356327043964958,
+    "distance_categorical": 1,
     "sparsity_cont": 4,
-    "sparsity_cat": 3,
+    "sparsity_cat": 1,
     "coherence_score": 0.36363636363636365,
     "incoherent_features": [
-        "ApplicantIncome",
-        "Dependents",
-        "Property_Area"
+        "CoapplicantIncome"
     ],
-    "validity": false,
+    "validity": true,
     "new_outcome": 0
 }

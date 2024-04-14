@@ -1,5 +1,5 @@
 from .model_interface import ModelInterface
-from trustce.ceinstance import CEInstance
+from codice.ceinstance import CEInstance
 from joblib import load
 import pickle
 import numpy as np

@@ -8,7 +8,7 @@ from sklearn.metrics import euclidean_distances
 from scipy.spatial.distance import mahalanobis
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from trustce.ceutils.diffusion import STDiffusionMap
+from codice.ceutils.diffusion import STDiffusionMap
 
 # Assume model has a predict function that takes DataFrame input and returns predictions
 # Transformer and model should be defined or imported here

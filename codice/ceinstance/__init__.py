@@ -1,7 +1,7 @@
 import json
 import numpy as np
 from collections import defaultdict
-from trustce.cefeature import CEFeatureType
+from codice.cefeature import CEFeatureType
 
 class CEInstance():
     """

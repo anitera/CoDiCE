@@ -3,7 +3,7 @@ from scipy.spatial import distance_matrix
 from scipy.linalg import eigh
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import LabelEncoder
-from trustce.ceutils.diffusion import STDiffusionMap
+from codice.ceutils.diffusion import STDiffusionMap
 
 class Transformer(object):
     def __init__(self, dataset, config):

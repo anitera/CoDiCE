@@ -1,8 +1,8 @@
 from . import CEInstance
 from ..cefeature.feature_sampler import ICEFeatureSampler
 from collections import OrderedDict, defaultdict
-from trustce.cefeature.feature_sampler import *
-from trustce.cefeature import CatCEFeature, NumCEFeature
+from codice.cefeature.feature_sampler import *
+from codice.cefeature import CatCEFeature, NumCEFeature
 import json
 import inspect
 import logging

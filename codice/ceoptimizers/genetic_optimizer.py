@@ -4,7 +4,7 @@ from copy import copy, deepcopy
 from scipy.spatial import distance_matrix
 from scipy.linalg import eigh
 import scipy.sparse.linalg as spsl
-from trustce.ceinstance.instance_sampler import ImmutableSampler, PermittedRangeSampler
+from codice.ceinstance.instance_sampler import ImmutableSampler, PermittedRangeSampler
 
 # TODO: make Optimizer parent class and implement genetic optimizer as child class
 class GeneticOptimizer():

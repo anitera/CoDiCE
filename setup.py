@@ -1,11 +1,11 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="trustce",
+    name="codice",
     version="0.2.9",
     packages=find_packages(),
     package_data={
-        "trustce": ["input_instance/*.json", "config/*.yaml", "config/*.json", "examples_notebooks_demos/*.ipynb", "models/*.pkl", "models/*.pth"]
+        "codice": ["input_instance/*.json", "config/*.yaml", "config/*.json", "examples_notebooks_demos/*.ipynb", "models/*.pkl", "models/*.pth"]
     },
     data_files=[("", ["LICENSE", 'README.md'])],
     install_requires=[

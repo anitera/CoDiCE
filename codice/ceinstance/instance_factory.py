@@ -1,6 +1,6 @@
 from . import CEInstance
 from collections import defaultdict
-from trustce.cefeature import CatCEFeature, NumCEFeature
+from codice.cefeature import CatCEFeature, NumCEFeature
 import json
 
 

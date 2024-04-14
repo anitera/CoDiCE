@@ -1,13 +1,13 @@
 {
-    "Gender": "Female",
+    "Gender": "Male",
     "Married": "Yes",
-    "Dependents": "1",
+    "Dependents": "0",
     "Education": "Graduate",
     "Self_Employed": "No",
-    "Property_Area": "Semiurban",
+    "Property_Area": "Urban",
     "Credit_History": 1.0,
-    "ApplicantIncome": 49342.07593122796,
-    "CoapplicantIncome": 14193.223500842716,
-    "LoanAmount": 289.5992906814985,
-    "Loan_Amount_Term": 413.3927654548485
+    "ApplicantIncome": 64198.90932035604,
+    "CoapplicantIncome": 18965.094407857367,
+    "LoanAmount": 575.0792747512958,
+    "Loan_Amount_Term": 83.08559055774737
 }

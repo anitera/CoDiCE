@@ -2,7 +2,7 @@ import numpy as np
 import copy
 import os
 import json
-from trustce.ceoptimizers.optimizer_interface import OptimizerInterface, OptimizerFactory
+from codice.ceoptimizers.optimizer_interface import OptimizerInterface, OptimizerFactory
 
 
 class CFsearch:

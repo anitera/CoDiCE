@@ -21,6 +21,9 @@ class GeneticOptimizer():
         self.mads = mads
         self.hyperparameters = hyperparameters
         self.instance_sampler = instance_sampler
+        self.min_mutation_rate, self.max_mutation_rate = 0.1, 0.9
+        self.mutation_rate = 0.5
+        self.crossover_probability = 0.7  # Probability with which crossover occurs
 
     def fitness_function(self, counterfactual_instance, query_instance, desired_output):
         """Calculate fitness function which consist of loss function and distance function"""
@@ -310,26 +313,19 @@ class GeneticOptimizer():
 
     def one_point_crossover(self, parent1, parent2):
         """Perform one point crossover. TODO: crossover needs feature selection and OOP aaproach"""
-         # Ensure parents are of the same type and have the same schema
-        assert parent1.features.keys() == parent2.features.keys()
-
-        child1 = deepcopy(parent1)
-        child2 = deepcopy(parent2)
-
-        #child1 = copy(parent1)
-        #child2 = copy(parent2)
-
-        # Get ordered feature names
-        feature_names = list(parent1.features.keys())
-        feature_names = [feature_name for feature_name in feature_names if not isinstance(self.instance_sampler.feature_samplers[feature_name], ImmutableSampler)]
-        rand_key = random.choice(feature_names)
-
-        # Swap values after the random key
-        for key in feature_names:
-            if key > rand_key:
-                child1.features[key], child2.features[key] = child2.features[key], child1.features[key]
-        
-        return child1, child2
+        if random.random() < self.crossover_probability:
+            # Perform crossover
+            assert parent1.features.keys() == parent2.features.keys()
+            child1, child2 = deepcopy(parent1), deepcopy(parent2)
+            feature_names = list(parent1.features.keys())
+            crossover_point = random.randint(0, len(feature_names) - 1)
+            for i in range(crossover_point, len(feature_names)):
+                feature_name = feature_names[i]
+                child1.features[feature_name], child2.features[feature_name] = child2.features[feature_name], child1.features[feature_name]
+            return child1, child2
+        else:
+            # Skip crossover, clone parents
+            return deepcopy(parent1), deepcopy(parent2)
 
 
           
@@ -478,14 +474,24 @@ class GeneticOptimizer():
         diversity = np.var(continuous_feature_matrix)
         return diversity
 
-    def adjust_mutation_rate(self, current_rate, diversity, min_rate, max_rate):
+    def adjust_mutation_rate(self, diversity):
         threshold_diversity = 0.5
         if diversity < threshold_diversity:
-            return min(current_rate * 1.1, max_rate)  # Increase mutation rate
+            self.mutation_rate = min(self.mutation_rate * 1.1, self.max_mutation_rate)
         else:
-            return max(current_rate * 0.9, min_rate)  # Decrease mutation rate
-        
-    
+            self.mutation_rate = max(self.mutation_rate * 0.9, self.min_mutation_rate)
+
+    def ensure_unique_counterfactuals(self, population, number_cf):
+        unique_cf = []
+        seen = set()
+        for individual in population:
+            features_tuple = tuple(individual.features[f].value for f in sorted(individual.features))
+            if features_tuple not in seen:
+                seen.add(features_tuple)
+                unique_cf.append(individual)
+                if len(unique_cf) >= number_cf:
+                    break
+        return unique_cf
 
     def find_counterfactuals(self, query_instance, number_cf, desired_output, maxiterations):
         """Find counterfactuals by generating them through genetic algorithm"""
@@ -516,9 +522,6 @@ class GeneticOptimizer():
         diff_distance_history.append(distance_combined[0])
         best_candidates_history.append(self.population[0]) 
 
-        min_mutation_rate, max_mutation_rate = 0.1, 0.9
-        mutation_rate = 0.5
-
         # until the stopping criteria is reached
         while iterations < maxiterations and len(self.counterfactuals) < number_cf:
             # if fitness is not improving for 5 generation break
@@ -539,13 +542,17 @@ class GeneticOptimizer():
             # For debugging
             # mutate with probability of mutation Maybe decrease mutation within convergence
             # In your main GA loop
+            self.population = top_individuals + children
             diversity = self.calculate_population_diversity(self.population)
-            mutation_rate = self.adjust_mutation_rate(mutation_rate, diversity, min_mutation_rate, max_mutation_rate)
+            self.adjust_mutation_rate(diversity)
 
             for i in range(len(self.population)):
-                # If the mutation probability is greater than a random number, mutate
-                if random.random() < mutation_rate:
-                    self.population[i] = self.mutate(self.population[i])
+                if random.random() < self.mutation_rate:
+                    mutated_instance = self.mutate(self.population[i])                   
+                    if mutated_instance is None:
+                        raise ValueError(f"Mutation returned None for individual at index {i}")              
+                    self.population[i] = mutated_instance
+
             fitness_list, loss, distance_combined = self.evaluate_population(self.population, query_instance, desired_output)
             self.population, fitness_list, loss, distance_combined = self.sort_population(self.population, fitness_list, loss, distance_combined)
             fitness_history.append(fitness_list[0])
@@ -557,4 +564,7 @@ class GeneticOptimizer():
 
         self.counterfactuals = self.population[:number_cf]
 
+        unique_cf = self.ensure_unique_counterfactuals(self.population, number_cf)
+        self.counterfactuals = unique_cf
+        
         return self.counterfactuals, best_candidates_history, fitness_history, loss_history, diff_distance_history

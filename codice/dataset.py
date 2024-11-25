@@ -12,7 +12,10 @@ class Dataset(object):
         self.path = self.config["path"]
         self.outcome_column_name = outcome_column_name
         self.data = self.load_dataset()
-        self.continuous_features_list, self.categorical_features_list = self.load_features_type()
+        # Initialize lists to ensure they exist even if not defined in config
+        self.continuous_features_list = []
+        self.categorical_features_list = []
+        self.continuous_features_list, self.categorical_features_list = self.load_features_type() # test empty  
 
         self.verify_features()
         self.preprocess_dataset()

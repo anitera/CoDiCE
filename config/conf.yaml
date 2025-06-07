@@ -1,0 +1,37 @@
+dataset:
+  type: csv
+  path: datasets/homeloan_clean.csv
+  continuous_features: ['ApplicantIncome','CoapplicantIncome','LoanAmount', 'Loan_Amount_Term', 'Credit_History']
+  categorical_features: ['Gender', 'Married', 'Dependents', 'Education', 'Self_Employed', 'Property_Area']
+  target: Loan_Status
+
+constraints_file: config/constraints_homeloan_ch.json
+output_folder: results
+
+model:
+  model_type: classification
+  model_backend: sklearn
+  state: pretrained
+  name: LogisticRegression
+  path: models/homeloan_logistic_model.pkl
+  categorical_features_encoding: label_encoder
+  continuous_features_normalization: standard
+
+cfsearch:
+  optimizer: genetic
+  loss_type: hinge
+  continuous_distance:
+    type: diffusion
+    diffusion_params:
+      k_neighbors: 8
+      alpha: 1
+      diffusion_normalization: True
+    weighted_l1_params:
+      weights: [1, 1, 1, 1]
+  categorical_distance: hamming
+  sparsity: True
+  coherence: True
+  search_normalization: False
+  search_encoding: False
+  objective_function_weights: [0.5, 0.5, 0.5]
+  feature_weights: False

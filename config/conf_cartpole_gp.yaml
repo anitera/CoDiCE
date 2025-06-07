@@ -17,7 +17,7 @@ model:
     model_number: 1
   path: models/trust-models.json
   categorical_features_encoding: none # Possible values: [onehot, label_encoder, frequency, none]
-  continuous_features_normalization: none # Possible values: [minmax, standard, none]
+  continuous_features_normalization: False # Possible values: [minmax, standard, False]
 
 cfsearch:
   optimizer: genetic # Possible values: [random, CPLEX, genetic], currently supported genetic

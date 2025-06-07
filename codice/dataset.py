@@ -124,11 +124,15 @@ class Dataset(object):
         print("Dataset preprocessed")
 
 
-    def split_dataset(train, outcome_column_name):
-        X=train.drop(outcome_column_name,1)
-        y=train[[outcome_column_name]]
+    def split_dataset(self, outcome_column_name):
+        """Split the loaded dataset into train and validation sets."""
 
-        x_train,x_val,y_train,y_val=train_test_split(X,y,test_size=0.2,random_state=1)
+        X = self.data.drop(columns=[outcome_column_name])
+        y = self.data[[outcome_column_name]]
+
+        x_train, x_val, y_train, y_val = train_test_split(
+            X, y, test_size=0.2, random_state=1
+        )
 
         return x_train, x_val, y_train, y_val
     

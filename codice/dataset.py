@@ -1,7 +1,10 @@
+import logging
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from codice.ceinstance import CEInstance
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 class Dataset(object):
     """
@@ -11,11 +14,17 @@ class Dataset(object):
         self.config = config
         self.path = self.config["path"]
         self.outcome_column_name = outcome_column_name
+        logger.info("Loading dataset from %s", self.path)
         self.data = self.load_dataset()
         # Initialize lists to ensure they exist even if not defined in config
         self.continuous_features_list = []
         self.categorical_features_list = []
-        self.continuous_features_list, self.categorical_features_list = self.load_features_type() # test empty  
+        self.continuous_features_list, self.categorical_features_list = self.load_features_type() # test empty
+        logger.info(
+            "Loaded %d continuous and %d categorical features",
+            len(self.continuous_features_list),
+            len(self.categorical_features_list),
+        )
 
         self.verify_features()
         self.preprocess_dataset()
@@ -42,7 +51,7 @@ class Dataset(object):
             continuous_features = self.config['continuous_features']
             categorical_features = self.config['categorical_features']
         except KeyError:
-            print("No features type found in config file")
+            logger.warning("No features type found in config file")
             continuous_features, categorical_features = self.infer_feature_type_from_dataset()
         return continuous_features, categorical_features
 
@@ -86,14 +95,15 @@ class Dataset(object):
         for feature_name in self.config['categorical_features']:
             self.check_if_categorical(feature_name)
 
-        print("Features verified")
-        print("Continious features: {}".format(self.continuous_features_list))
-        print("Categorical features: {}".format(self.categorical_features_list))
+        logger.info("Features verified")
+        logger.debug("Continuous features: %s", self.continuous_features_list)
+        logger.debug("Categorical features: %s", self.categorical_features_list)
 
     def preprocess_dataset(self):
         """
         Preprocess dataset
         """
+        logger.info("Preprocessing dataset")
         if self.outcome_column_name == "Loan_Status":
             self.data.loc[self.data["Loan_Status"]=="Y", "Loan_Status"] = 1
             self.data.loc[self.data["Loan_Status"]=="N", "Loan_Status"] = 0
@@ -121,7 +131,7 @@ class Dataset(object):
 
         self.data = self.data.reset_index(drop=True)
 
-        print("Dataset preprocessed")
+        logger.info("Dataset preprocessed")
 
 
     def split_dataset(self, outcome_column_name):
@@ -132,6 +142,12 @@ class Dataset(object):
 
         x_train, x_val, y_train, y_val = train_test_split(
             X, y, test_size=0.2, random_state=1
+        )
+
+        logger.info(
+            "Dataset split into %d training and %d validation instances",
+            len(x_train),
+            len(x_val),
         )
 
         return x_train, x_val, y_train, y_val

@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 import scipy.sparse as sps
@@ -8,6 +9,8 @@ except ModuleNotFoundError:
     from scipy.misc import logsumexp
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 from sklearn.neighbors import NearestNeighbors
 import scipy.sparse as sps
 import scipy.sparse.linalg as spsl
@@ -38,7 +41,7 @@ class STDiffusionMap(object):
 
     def _make_diffusion_coords(self, L):
         if len(self.data) > 1000:
-            print("The data is too large")
+            logger.warning("The data is too large")
             evals, evecs = spsl.eigsh(L, k=50, which='LM')
         else:
             evals, evecs = spsl.eigs(L, k=((len(self.data) - 1)//2), which='LR')

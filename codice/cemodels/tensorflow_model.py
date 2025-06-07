@@ -1,8 +1,11 @@
+import logging
 from .model_interface import ModelInterface
 from codice.ceinstance import CEInstance
 import tensorflow as tf
 import numpy as np
 import warnings
+
+logger = logging.getLogger(__name__)
 
 class TensorflowModel(ModelInterface):
     def __init__(self, model_config, model, preprocessor=None):
@@ -77,7 +80,7 @@ class TensorflowModel(ModelInterface):
             model = tf.keras.models.load_model(filepath)
             return model
         except Exception as e:
-            print(f"Error loading model: {e}")
+            logger.error("Error loading model: %s", e)
             return None
 
     def get_base_estimator_input_shape(self):
@@ -86,9 +89,9 @@ class TensorflowModel(ModelInterface):
 
     def sanity_check(self):
         if self.model_state == "pretrained":
-            print("Sanity check for model")
+            logger.info("Sanity check for model")
             input_shape = self.get_base_estimator_input_shape()[1:]  # Omit the batch dimension
-            print("Model input shape is", input_shape)
+            logger.debug("Model input shape is %s", input_shape)
             fake_input = np.random.rand(*input_shape).reshape(1, *input_shape)
             prediction = self.predict(fake_input)
-            print("Sanity check prediction", prediction)
+            logger.debug("Sanity check prediction %s", prediction)

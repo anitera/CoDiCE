@@ -7,6 +7,8 @@ import json
 import inspect
 import logging
 
+logger = logging.getLogger(__name__)
+
 class CEInstanceSampler(object):
     def __init__(self, config, transformers, instance_factory, normalization=True, custom_rules=None):
         self.config = config
@@ -39,12 +41,12 @@ class CEInstanceSampler(object):
 
         for feature_name, constraint in all_constraints.items():
             if constraint['type'] == 'dependency':
-                print(f"Dependency Type: {constraint['dependencyType']}")
-                print(f"Root: {feature_name}")
+                logger.debug("Dependency Type: %s", constraint['dependencyType'])
+                logger.debug("Root: %s", feature_name)
                 child_feature = constraint['child']
                 child_range = self._get_feature_range(child_feature)
-                print(f"Child: {child_feature}")
-                print(f"Child Range: {child_range}")
+                logger.debug("Child: %s", child_feature)
+                logger.debug("Child Range: %s", child_range)
                 if constraint['dependencyType'] == 'causal':
                     try:
                         child_sampler = self.feature_samplers[child_feature] # just use the sampler that was already created
@@ -53,7 +55,7 @@ class CEInstanceSampler(object):
                 elif constraint['dependencyType'] == 'monotonic_dependency':
                     child_sampler = MonotonicSampler(child_feature, child_range, "increasing")
                 elif constraint['dependencyType'] == 'rule':
-                    print(f"Rule: {constraint['rule']}")
+                    logger.debug("Rule: %s", constraint['rule'])
                     try:
                         rule_function = self.custom_rules[constraint['rule']]
                     except KeyError:
@@ -77,8 +79,8 @@ class CEInstanceSampler(object):
 
     def _create_default_samplers(self, feature_name, is_dependency=False):
         feature_range = self._get_feature_range(feature_name)
-        print(f"Feature: {feature_name}")
-        print(f"Range: {feature_range}")
+        logger.debug("Feature: %s", feature_name)
+        logger.debug("Range: %s", feature_range)
 
         if inspect.isclass(self.instance_factory.instance_schema[feature_name]):
             if issubclass(self.instance_factory.instance_schema[feature_name], NumCEFeature):
@@ -102,12 +104,12 @@ class CEInstanceSampler(object):
     def _create_sampler_from_constraint(self, feature_name, constraint):
         feature_range = self._get_feature_range(feature_name)
 
-        print(f"Feature: {feature_name}")
-        print(f"Range: {feature_range}")
-        print(f"Constraint Type: {constraint['type']}")
+        logger.debug("Feature: %s", feature_name)
+        logger.debug("Range: %s", feature_range)
+        logger.debug("Constraint Type: %s", constraint['type'])
 
         if constraint['type'] == 'monotonic':
-            print(f"Direction: {constraint['direction']}")
+            logger.debug("Direction: %s", constraint['direction'])
             sampler = MonotonicSampler(feature_name, feature_range, constraint['direction'])
         elif constraint['type'] == 'immutable':
             sampler = ImmutableSampler(feature_name, feature_range)

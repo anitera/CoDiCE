@@ -1,8 +1,11 @@
+import logging
 import numpy as np
 from scipy.spatial import distance_matrix
 from scipy.linalg import eigh
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import LabelEncoder
+
+logger = logging.getLogger(__name__)
 from codice.ceutils.diffusion import STDiffusionMap
 
 class Transformer(object):
@@ -156,7 +159,7 @@ class Transformer(object):
             if mads[feature] <= 0:
                 mads[feature] = 1.0
                 #if display_warnings:
-                print(" MAD for feature %s is 0, so replacing it with 1.0 to avoid error.", feature)
+                logger.warning("MAD for feature %s is 0, replaced with 1.0 to avoid error.", feature)
         return mads
 
 
@@ -317,7 +320,12 @@ class FeatureTransformer(object):
     
     def _label_enc(self, value):
         transformed_value = self.label_encoder.transform([value])[0]
-        print("Label encoder: ", value, " for feature ", self.feature_name, " is transformed into ", transformed_value)
+        logger.debug(
+            "Label encoder: %s for feature %s is transformed into %s",
+            value,
+            self.feature_name,
+            transformed_value,
+        )
         return transformed_value
     
     def _label_dec(self, value):

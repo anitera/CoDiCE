@@ -1,8 +1,11 @@
+import logging
 import random
 import numpy as np
 from copy import copy, deepcopy
 from scipy.spatial import distance_matrix
 from scipy.linalg import eigh
+
+logger = logging.getLogger(__name__)
 import scipy.sparse.linalg as spsl
 from codice.ceinstance.instance_sampler import ImmutableSampler, PermittedRangeSampler
 
@@ -512,7 +515,7 @@ class GeneticOptimizer():
         t = 1e-4
         stop_count = 0
         self.population = self.generate_population(query_instance, population_size)
-        print("Get values of one population item", self.population[0].get_values_dict())
+        logger.debug("Get values of one population item %s", self.population[0].get_values_dict())
         fitness_list, loss, distance_combined = self.evaluate_population(self.population, query_instance, desired_output)
         
         # Sorting didn't work properly

@@ -1,8 +1,11 @@
+import logging
 import numpy as np
 import copy
 import os
 import json
 from codice.ceoptimizers.optimizer_interface import OptimizerInterface, OptimizerFactory
+
+logger = logging.getLogger(__name__)
 
 
 class CFsearch:
@@ -51,7 +54,7 @@ class CFsearch:
             filename = indexname + "_" + str(i) + ".json"
             json_path = os.path.join(output_folder, filename)
             # Store counterfactuals in json file
-            print("Store counterfactuals to ", json_path)
+            logger.info("Store counterfactuals to %s", json_path)
             with open(json_path, 'w') as file:
                 counterfactual_values = self.counterfactual_instances[i].get_values_dict()
                 json.dump(counterfactual_values, file, indent=4, default=self.default_serializer)
@@ -69,7 +72,7 @@ class CFsearch:
             filename = indexname + "_eval_" + str(i) + ".json"
             json_path = os.path.join(output_folder, filename)
             # Store counterfactuals in json file
-            print("Store counterfactuals evaluation to ", json_path)
+            logger.info("Store counterfactuals evaluation to %s", json_path)
             with open(json_path, 'w') as file:
                 json.dump(self.evaluations[i], file, indent=4, default=self.default_serializer)
         #TODO
@@ -113,9 +116,9 @@ class CFsearch:
         for cf in self.counterfactual_instances:
             self.store_outcome(cf)
             if self.check_validity(cf):
-                print("Valid counterfactuals were found: ", cf.get_values_dict())
+                logger.info("Valid counterfactual found: %s", cf.get_values_dict())
             else:
-                print("Not all conterfactuals are valid, but the closest instances reported")
+                logger.warning("Counterfactual not valid; reporting closest instance")
         return self.counterfactual_instances
         '''
         # Rounding
@@ -171,7 +174,7 @@ class CFsearch:
         self.original_instance_prediciton = self.model.predict_instance(original_instance)
         self.counterfactual_instances = counterfactual_instances
         if self.counterfactual_instances == []:
-            print("No counterfactuals found, nothing to evaluate.")
+            logger.warning("No counterfactuals found, nothing to evaluate.")
             return
         for i, counterfactual_instance in enumerate(self.counterfactual_instances):
             if not counterfactual_instance.normalized:
@@ -182,13 +185,17 @@ class CFsearch:
             sparsity_cat = self.sparsity_categorical(original_instance, counterfactual_instance)
             validity = self.check_validity(counterfactual_instance)
             coherence_score, incoherent_features = self.check_coherence(original_instance, counterfactual_instance)
-            print("CF instance: ", counterfactual_instance.get_values_dict())
-            print("Distance continuous: ", distance_continuous)
-            print("Distance categorical: ", distance_categorical)
-            print("Sparsity continuous: ", sparsity_cont)
-            print("Sparsity categorical: ", sparsity_cat)
-            print("Validity: ", validity)
-            print("Coherence: ", coherence_score, " incoherent features are ", incoherent_features)
+            logger.debug("CF instance: %s", counterfactual_instance.get_values_dict())
+            logger.debug("Distance continuous: %s", distance_continuous)
+            logger.debug("Distance categorical: %s", distance_categorical)
+            logger.debug("Sparsity continuous: %s", sparsity_cont)
+            logger.debug("Sparsity categorical: %s", sparsity_cat)
+            logger.debug("Validity: %s", validity)
+            logger.debug(
+                "Coherence: %s incoherent features: %s",
+                coherence_score,
+                incoherent_features,
+            )
             self.evaluations.append({"distance_continuous": distance_continuous, 
                                      "distance_categorical": distance_categorical, 
                                      "sparsity_cont": sparsity_cont, 
@@ -331,14 +338,14 @@ class CFsearch:
         # Compare marginal and joint signs and print which are different
         common_keys_same_value, common_keys_diff_value = self.compare_common_keys(marginal_signs, joint_signs)
         if common_keys_same_value:
-            print("Common keys with the same value:", common_keys_same_value)
+            logger.debug("Common keys with the same value: %s", common_keys_same_value)
         else:
-            print("No common keys with the same value found.")
+            logger.debug("No common keys with the same value found.")
 
         if common_keys_diff_value:
-            print("Common keys with different values:", common_keys_diff_value)
+            logger.debug("Common keys with different values: %s", common_keys_diff_value)
         else:
-            print("No common keys with different values found.")
+            logger.debug("No common keys with different values found.")
         
         return
     
@@ -359,7 +366,12 @@ class CFsearch:
         control_instance = copy.deepcopy(original_instance)
         original_instance_value = original_instance.features[feature_name].value
         counterfactual_instance_value = counterfactual_instance.features[feature_name].value
-        print("Feature {} changed its value from {} to {}".format(feature_name, original_instance.features[feature_name].value, counterfactual_instance.features[feature_name].value))
+        logger.debug(
+            "Feature %s changed its value from %s to %s",
+            feature_name,
+            original_instance.features[feature_name].value,
+            counterfactual_instance.features[feature_name].value,
+        )
         # Current prediction of original instance
         # Let's change only counterfactual value of the feature
         control_instance.features[feature_name].value = counterfactual_instance_value
@@ -392,7 +404,12 @@ class CFsearch:
         control_instance = copy.deepcopy(original_instance)
         original_instance_value = original_instance.features[feature_name].value
         counterfactual_instance_value = counterfactual_instance.features[feature_name].value
-        print("Feature {} changed its value from {} to {}".format(feature_name, original_instance.features[feature_name].value, counterfactual_instance.features[feature_name].value))
+        logger.debug(
+            "Feature %s changed its value from %s to %s",
+            feature_name,
+            original_instance.features[feature_name].value,
+            counterfactual_instance.features[feature_name].value,
+        )
         # Current prediction of original instance
         original_prediction = self.model.predict_proba_instance(original_instance)
         # Let's change only counterfactual value of the feature
@@ -447,7 +464,7 @@ class CFsearch:
         import pandas as pd
 
         # original instance
-        print('Query instance (original outcome : %i)' % self.original_instance_prediciton)
+        logger.info('Query instance (original outcome : %i)', self.original_instance_prediciton)
         #if self.query_instance.normalized:
         #    self.transformer.denormalize_instance(self.query_instance)
         display(pd.DataFrame([self.query_instance.get_values_dict()]))  # works only in Jupyter notebook
@@ -456,11 +473,11 @@ class CFsearch:
         
     def _visualize_internal(self, target_instance, counterfactuals, show_only_changes=True, is_notebook_console=False):
         if counterfactuals is not None and len(counterfactuals) > 0:
-            print('\nCounterfactual set (new outcome: {0})'.format(self.new_outcome)) # if more than 1 cf won't work
+            logger.info('\nCounterfactual set (new outcome: %s)', self.new_outcome)
             self._dump_output(content=counterfactuals, show_only_changes=show_only_changes,
                                 is_notebook_console=is_notebook_console)
         else:
-            print('\nNo counterfactuals found!')
+            logger.info('\nNo counterfactuals found!')
 
     def _dump_output(self, content, show_only_changes=True, is_notebook_console=False):
         import pandas as pd
@@ -474,7 +491,7 @@ class CFsearch:
     def print_list(self, li, show_only_changes):
         if show_only_changes is False:
             for ix in range(len(li)):
-                print(li[ix])
+                logger.info(li[ix])
         else:
             newli = copy.deepcopy(li)
             org = self.test_instance_df.values.tolist()[0]
@@ -482,7 +499,7 @@ class CFsearch:
                 for jx in range(len(newli[ix])):
                     if newli[ix][jx] == org[jx]:
                         newli[ix][jx] = '-'
-                print(newli[ix])
+                logger.info(newli[ix])
 
     def display_df(self, df, show_only_changes):
         from IPython.display import display

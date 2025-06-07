@@ -1,6 +1,9 @@
+import logging
 from .model_interface import ModelInterface
 import json
 from codice.ceinstance import CEInstance
+
+logger = logging.getLogger(__name__)
 
 class GeneticProgrammingModel(ModelInterface):
     def __init__(self, model_config):
@@ -17,7 +20,7 @@ class GeneticProgrammingModel(ModelInterface):
                 model_number = model_config.get('gp_params').get('model_number')
                 # Depending if user enumerates models from 1 or 0
                 self.model = self.models[model_number-1]
-                print("First model is ", self.model)
+                logger.debug("First model is %s", self.model)
         else: self.model = self.train(model_config)
 
     def train(self, model_config):
@@ -73,7 +76,7 @@ class GeneticProgrammingModel(ModelInterface):
         if gp_model is None:
             raise Exception("Model {} not found in {}".format(self.model_name, filepath))
         parsed_expressions = self.parse_expressions(gp_model)
-        print("Parsed expressions are ", parsed_expressions)
+        logger.debug("Parsed expressions are %s", parsed_expressions)
         return parsed_expressions
     
     def parse_expressions(self, expressions):

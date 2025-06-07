@@ -4,6 +4,9 @@
 #from feature_manager import FeatureManager
 
 import argparse
+from .logging_utils import setup_logging
+
+setup_logging()
 
 
 

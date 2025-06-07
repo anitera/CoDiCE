@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import logging
+
+logger = logging.getLogger(__name__)
 import sklearn
 from typing import List, Union
 from dataset import Dataset
@@ -131,18 +133,18 @@ class FeatureManager(object):
         self.cov1 = np.cov(self.normalized_train_data.loc[self.training_data[self.outcome_name]==1].values.T, bias=True)
         try:
             self.inv_cov_cl1 = np.linalg.inv(self.cov1)
-            print("Matrix for class 1 is non-singular")
+            logger.debug("Matrix for class 1 is non-singular")
         except np.linalg.LinAlgError:
-            print("Matrix is singular")
+            logger.warning("Matrix is singular")
             self.inv_cov_cl1 = False
 
         self.mean_out0 = self.normalized_train_data.loc[self.training_data[self.outcome_name]==0, self.continuous_features_list].mean()
         self.cov0 = np.cov(self.normalized_train_data.loc[self.training_data[self.outcome_name]==0].values.T, bias=True)
         try:
             self.inv_cov_cl0 = np.linalg.inv(self.cov0)
-            print("Matrix is non-singular")
+            logger.debug("Matrix is non-singular")
         except np.linalg.LinAlgError:
-            print("Matrix is singular")
+            logger.warning("Matrix is singular")
             self.inv_cov_cl0 = False
 
     def get_mads(self, normalized=True):

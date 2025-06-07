@@ -1,3 +1,4 @@
+import logging
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
@@ -8,6 +9,8 @@ import os
 from sklearn.model_selection import train_test_split
 import pandas as pd
 from codice.cemodels.explainable_model import ExplainableModel
+
+logger = logging.getLogger(__name__)
 
 def load_dataset(confpath, datasetpath):
     # Read the configuration file
@@ -27,7 +30,7 @@ def load_dataset(confpath, datasetpath):
                 # Add parameter name and value to dictionary
                 config_dict[parameter_name.strip()] = parameter_value.strip()
 
-    print(config_dict)
+    logger.debug(config_dict)
 
     train = pd.read_csv(datasetpath)
     continuous_features_list = ['ApplicantIncome','CoapplicantIncome','LoanAmount', 'Loan_Amount_Term']
@@ -76,7 +79,7 @@ def train_model(transformations, x_train, x_val, y_train, y_val):
     logistic_model = model.fit(x_train, y_train.values.ravel())
     y_pred = logistic_model.predict(x_val)
     val_accuracy = accuracy_score(y_pred, y_val)*100
-    print(val_accuracy)
+    logger.info("Validation accuracy: %s", val_accuracy)
 
     return logistic_model
 

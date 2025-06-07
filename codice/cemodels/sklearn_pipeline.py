@@ -1,9 +1,12 @@
+import logging
 from sklearn.pipeline import Pipeline
 from .model_interface import ModelInterface
 from codice.ceinstance import CEInstance
 from joblib import load
 import numpy as np
 import warnings
+
+logger = logging.getLogger(__name__)
 
 class SklearnPipeline(ModelInterface):
     def __init__(self, model_config):
@@ -58,7 +61,7 @@ class SklearnPipeline(ModelInterface):
                 model = load(f)
                 return model
             except Exception as e:
-                print(f"Error loading model: {e}")
+                logger.error("Error loading model: %s", e)
 
     def get_base_estimator_input_shape(self):
         """
@@ -82,12 +85,12 @@ class SklearnPipeline(ModelInterface):
 
     def sanity_check(self):
         if self.model_state == "pretrained":
-            print("Sanity check for pipeline model")
+            logger.info("Sanity check for pipeline model")
             try:
                 input_shape = self.get_base_estimator_input_shape()
-                print("Model input shape is ", input_shape)
+                logger.debug("Model input shape is %s", input_shape)
                 fake_input = np.random.rand(1, input_shape)  # Adjusted for a single sample
                 pred = self.predict(fake_input)
-                print("Sanity check prediction: ", pred)
+                logger.debug("Sanity check prediction: %s", pred)
             except ValueError as e:
-                print("Sanity check failed:", e)
+                logger.error("Sanity check failed: %s", e)

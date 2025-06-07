@@ -1,9 +1,12 @@
+import logging
 from .model_interface import ModelInterface
 from codice.ceinstance import CEInstance
 from joblib import load
 import pickle
 import numpy as np
 import warnings
+
+logger = logging.getLogger(__name__)
 
 class SklearnModel(ModelInterface):
     def __init__(self, model_config):
@@ -42,7 +45,7 @@ class SklearnModel(ModelInterface):
         """
         # Suppress specific warning
         warnings.filterwarnings(action='ignore', category=UserWarning)
-        print(x.to_numpy_array())
+        logger.debug(x.to_numpy_array())
         return self.predict(x.to_numpy_array().reshape(1, -1))[0]
         
     def predict_proba_instance(self, x: CEInstance):
@@ -50,7 +53,7 @@ class SklearnModel(ModelInterface):
         Predict instance
         """
         warnings.filterwarnings(action='ignore', category=UserWarning)
-        print(x.to_numpy_array())
+        logger.debug(x.to_numpy_array())
         return self.predict_proba(x.to_numpy_array().reshape(1, -1))[0]
 
     def evaluate(self, X, y):
@@ -65,7 +68,7 @@ class SklearnModel(ModelInterface):
                 model = load(f)
                 return model
             except Exception as e:
-                print(f"Error loading model: {e}")
+                logger.error("Error loading model: %s", e)
 
     def get_base_estimator_input_shape(self):
         """
@@ -102,10 +105,10 @@ class SklearnModel(ModelInterface):
 
     def sanity_check(self):
         if self.config["state"] == "pretrained":
-            print("Sanity check for model")
+            logger.info("Sanity check for model")
             input_shape = self.get_base_estimator_input_shape()
-            print("Model input shape is ", input_shape)
+            logger.debug("Model input shape is %s", input_shape)
             fake_input = np.random.rand(input_shape)
             fake_input = fake_input.reshape(1, -1)
             self.predict(fake_input)
-            print("Sanity check prediciton ", self.predict(fake_input))
+            logger.debug("Sanity check prediction %s", self.predict(fake_input))

@@ -1,0 +1,39 @@
+dataset:
+  type: csv # or csv
+  path: datasets/retail_input_predictor.csv
+  continuous_features: ['slotcost', 'slot_start', 'exact_selection_customer_perc', 'rank_cost','median_cost', 'partial_selection_customer_perc','expanding_avg_days_to_delivery', 'days_since_first_purchase','q1_cost', 'max_cost', 'min_cost', 'slot_width']
+  categorical_features: []
+  target: Output
+
+constraints_file: config/constraints_retail.json
+output_folder: results
+
+model:
+  model_type: classification
+  model_backend: gp # we can use sklearn 
+  state: pretrained
+  name: retail
+  gp_params:
+    model_number: 1
+  path: models/energy_summer_gplearn.pkl
+  categorical_features_encoding: False # Possible values: [onehot, label_encoder, frequency, none]
+  continuous_features_normalization: False # Possible values: [minmax, standard, none]
+
+cfsearch:
+  optimizer: genetic # Possible values: [random, CPLEX, genetic], currently supported genetic
+  loss_type: hinge # Possible values: for regression [MSE, RMSE, MAE], for classification - [hinge]
+  continuous_distance:
+    type: weighted_l1 # Possible values: [weighted_l1, diffusion]
+    diffusion_params:
+      k_neighbors: 10  # the size of the local neighborhood around each point, median of the pairwise distances among a random sample of your data points.
+      alpha: 1 # how many dimensions or features of the diffusion space you want to consider
+      diffusion_normalization: False # standard
+    weighted_l1_params:
+      weights: [1, 1, 1, 1]
+  categorical_distance: hamming # l1
+  sparsity: True # Possible values: [True, False]
+  coherence: True # Possible values: [True, False]
+  search_normalization: False # standard
+  search_encoding: False # frequency
+  objective_function_weights: [1.5, 1, 0.5] # weights for distance, sparsity, coherence penalties
+  feature_weights: False

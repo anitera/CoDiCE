@@ -1,0 +1,19 @@
+{
+    "features": {
+        "max_cost":  {
+            "type": "immutable"
+        },
+        "min_cost": {
+            "type": "immutable"
+        },
+        "rank_cost": {
+            "type": "immutable"
+        },
+        "median_cost": {
+            "type": "immutable"
+        },
+        "q1_cost": {
+            "type": "immutable"
+        }
+    }
+}

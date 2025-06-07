@@ -1,0 +1,39 @@
+{
+    "features": {
+        "max_cost":  {
+            "type": "immutable"
+        },
+        "min_cost": {
+            "type": "immutable"
+        },
+        "rank_cost": {
+            "type": "immutable"
+        },
+        "median_cost": {
+            "type": "immutable"
+        },
+        "q1_cost": {
+            "type": "immutable"
+        },
+        "slotcost": {
+            "type": "monotonic",
+            "direction": "decreasing"
+        },
+        "slot_start": {
+            "type": "monotonic",
+            "direction": "decreasing"
+        },
+        "partial_selection_customer_perc": {
+            "type": "monotonic",
+            "direction": "increasing"
+        },
+        "exact_selection_customer_perc": {
+            "type": "monotonic",
+            "direction": "increasing"
+        },
+        "slot_width": {
+            "type": "monotonic",
+            "direction": "increasing"
+        }
+    }
+}

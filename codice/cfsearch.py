@@ -100,7 +100,8 @@ class CFsearch:
         """Find counterfactuals by generating them through genetic optimizer"""
         self.original_instance = query_instance
         self.query_instance = query_instance
-        #self.transformer.normalize_instance(self.query_instance)
+        #self.transformer.normalize_instance(self.query_instance) - this line is commented because we assume that model takes care of transformation
+        logger.info("Finding counterfactuals for instance: %s", self.query_instance.get_values_dict())
         self.original_instance_prediciton = self.model.predict_instance(self.query_instance)
         if desired_class == "opposite" and self.model.model_type == "classification":
             self.desired_output = 1 - self.original_instance_prediciton

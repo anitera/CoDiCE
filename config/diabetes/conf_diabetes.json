@@ -1,0 +1,51 @@
+{
+  "dataset": {
+    "type": "csv",
+    "path": "datasets/diabetes.csv",
+    "continuous_features": [
+      "Number of times pregnant",
+      "Plasma glucose concentration a 2 hours in an oral glucose tolerance test",
+      "Diastolic blood pressure (mm Hg)",
+      "Triceps skin fold thickness (mm)",
+      "2-Hour serum insulin (mu U/ml)",
+      "Body mass index (weight in kg/(height in m)^2)",
+      "Diabetes pedigree function",
+      "Age (years)"
+    ],
+    "categorical_features": [],
+    "target": "Class variable"
+  },
+  "constraints_file": "config/constraints_conf_diabetes.json",
+  "output_folder": "results",
+  "model": {
+    "model_type": "classification",
+    "model_backend": "sklearn",
+    "state": "pretrained",
+    "name": "LogisticRegression",
+    "path": "models/logistic_model_diabetes.pkl",
+    "categorical_features_encoding": "label_encoder",
+    "continuous_features_normalization": false
+  },
+  "cfsearch": {
+    "optimizer": "genetic",
+    "loss_type": "hinge",
+    "continuous_distance": {
+      "type": "diffusion",
+      "diffusion_params": {
+        "k_neighbors": 12,
+        "alpha": 1,
+        "diffusion_normalization": "standard"
+      },
+      "weighted_l1_params": {
+        "weights": [1, 1, 1, 1]
+      }
+    },
+    "categorical_distance": "hamming",
+    "sparsity": true,
+    "coherence": true,
+    "search_normalization": false,
+    "search_encoding": false,
+    "objective_function_weights": [1, 0.5, 0.5],
+    "feature_weights": false
+  }
+}

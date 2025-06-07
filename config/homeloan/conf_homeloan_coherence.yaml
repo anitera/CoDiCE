@@ -5,7 +5,7 @@ dataset:
   categorical_features: ['Gender', 'Married', 'Dependents', 'Education', 'Self_Employed', 'Property_Area']
   target: Loan_Status
 
-constraints_file: config/constraints_homeloan_ch.json
+constraints_file: config/homeloan/constraints_homeloan_ch.json
 output_folder: results
 
 model:
@@ -13,9 +13,9 @@ model:
   model_backend: sklearn
   state: pretrained
   name: LogisticRegression
-  path: models/homeloan_logistic_model.pkl
-  categorical_features_encoding: False # Possible values: [onehot, label_encoder, frequency]
-  continuous_features_normalization: False # Possible values: [minmax, standard]
+  path: models/homeloan_logistic_model_notebook.pkl
+  categorical_features_encoding: False # Possible values: [False, onehot, label_encoder, frequency] use false if the scaler in pipeline
+  continuous_features_normalization: False # Possible values: [False, minmax, standard]
 
 cfsearch:
   optimizer: genetic # Possible values: [random, CPLEX, genetic], currently supported genetic
